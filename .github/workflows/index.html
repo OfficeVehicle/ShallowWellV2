@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Shallow Well Survey App - Offline & Online</title>
+  <style>
+    :root{
+      --bg:#f3f7fb;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#d1d5db;
+      --accent:#2563eb;--accent2:#1d4ed8;--good:#15803d;--bad:#b91c1c;--warn:#b45309;
+      --shadow:0 8px 24px rgba(15,23,42,.08);--radius:16px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);width:100%;overflow-x:hidden}
+    html{scroll-behavior:smooth}
+    body{min-height:100dvh;touch-action:manipulation}
+    body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0}
+    .wrap{width:100%;max-width:1100px;margin:0 auto;padding:12px}
+    .card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+    h1,h2,h3{margin:0 0 8px 0;line-height:1.2}
+    h1{font-size:24px} h2{font-size:19px} h3{font-size:16px}
+    .sub,.small{color:var(--muted);font-size:13px;line-height:1.5}
+    .notice{padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;line-height:1.4;margin-top:10px}
+    .warning{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+    .grid,.grid-3,.row{display:grid;gap:12px;grid-template-columns:1fr}
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-size:14px;font-weight:700}
+    input,select,textarea{width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;font-size:16px;background:#fff;color:var(--text);appearance:none}
+    textarea{min-height:96px;resize:vertical}
+    input[readonly]{background:#f8fafc}
+    button{width:100%;min-height:50px;border:0;border-radius:12px;padding:12px 16px;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;touch-action:manipulation}
+    button.secondary{background:#374151} button.ghost{background:#6b7280} button.success{background:var(--good)} button.warn{background:var(--warn)} button.danger{background:var(--bad)}
+    .row-delete-btn{min-height:38px;padding:8px 12px;border-radius:10px;font-size:13px;white-space:nowrap}
+    .pagination-controls{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .pagination-controls button{width:auto;min-width:110px;min-height:42px;padding:9px 14px}
+    .pagination-controls button:disabled{opacity:.45;cursor:not-allowed}
+    .page-info{font-size:14px;font-weight:700;color:var(--muted)}
+    .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;background:#eef2ff;color:#3730a3}
+    .pill.online{background:#dcfce7;color:#166534}.pill.offline{background:#fee2e2;color:#991b1b}
+    .app-status{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+    .app-status .notice{margin-top:0;flex:1;min-width:220px}
+    
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .chip-label { position: relative; display: inline-block; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .chip-label input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+    .chip-text { display: inline-block; padding: 12px 18px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font-size: 14px; color: var(--text); transition: 0.2s ease; user-select: none; font-weight: 500; }
+    .chip-label input:checked ~ .chip-text { background: #eef2ff; border-color: var(--accent); color: var(--accent2); font-weight: 700; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15); }
+    
+    .result-grid{display:grid;grid-template-columns:1fr;gap:12px}
+
+    .formula-guide{margin-top:14px;border:1px solid var(--border);border-radius:14px;padding:12px;background:#f8fafc}
+    .formula-guide summary{cursor:pointer;font-weight:800;color:var(--text);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .formula-guide summary::-webkit-details-marker{display:none}
+    .formula-guide summary::after{content:'Show/Hide';font-size:12px;color:var(--muted);font-weight:700}
+    .formula-list{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+    .formula-item{border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;line-height:1.45}
+    .formula-item strong{display:block;margin-bottom:4px;font-size:13px;color:var(--text)}
+    .formula-item code{display:block;margin:4px 0;padding:7px 9px;border-radius:9px;background:#eef2ff;color:#1d4ed8;font-size:13px;white-space:normal;word-break:break-word}
+    .formula-item .small{font-size:12.5px}
+    .metric{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff}
+    .metric .name{font-size:13px;color:var(--muted);margin-bottom:6px}
+    .metric .value{font-size:22px;font-weight:700;word-break:break-word}
+    .status-good{color:var(--good)} .status-bad{color:var(--bad)}
+    .table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:12px;background:#fff;margin-top:12px}
+    table{width:100%;min-width:980px;border-collapse:collapse;background:#fff}
+    th,td{border-bottom:1px solid var(--border);padding:10px;text-align:left;font-size:14px;vertical-align:top;white-space:normal;word-break:break-word;max-width:220px;}
+    th{background:#eef2ff;position:sticky;top:0;z-index:1}
+    .photo-wrap img{width:100%;min-height:180px;max-height:320px;object-fit:contain;border:1px solid var(--border);border-radius:12px;background:#f8fafc}
+    .report-photo-thumb{width:72px;height:72px;max-width:72px;max-height:72px;object-fit:contain;display:block;border:1px solid var(--border);border-radius:8px;background:#f8fafc}
+    .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .tab{padding:10px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:700;font-size:13px}
+    .tab.active{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
+    .tabpane{display:none}
+    .tabpane.active{display:block}
+    #mapFrame{width:100%;height:420px;border:1px solid var(--border);border-radius:12px}
+    .sticky-actions{position:sticky;bottom:0;z-index:10;background:rgba(243,247,251,.95);backdrop-filter:blur(6px);padding:8px 0 calc(8px + env(safe-area-inset-bottom)) 0}
+    .sticky-actions .inner{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .two-col{display:grid;grid-template-columns:1fr;gap:12px}
+    
+
+
+
+
+    
+    @keyframes chartSpinIn{0%{opacity:.25;transform:scale(.7) rotate(-120deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}
+    @keyframes chartPulseSoft{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+    @keyframes barGrowIn{0%{opacity:.3;transform:scaleX(.1)}100%{opacity:1;transform:scaleX(1)}}
+    .top-actions{display:flex;justify-content:flex-end;margin-top:10px}
+    .theme-toggle-btn{width:auto;min-height:42px;padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,#4338ca 0%,#7c3aed 50%,#ec4899 100%);box-shadow:0 8px 18px rgba(79,70,229,.18)}
+    .theme-toggle-btn:hover{filter:brightness(1.03)}
+    .graph-badge.palette::before{background:linear-gradient(90deg,#4f46e5 0%,#06b6d4 50%,#f97316 100%)}
+    .graph-badge.shade::before{background:linear-gradient(180deg,#64748b 0%,#1e293b 100%)}
+    .animated-donut,.animated-pie{animation:chartSpinIn .95s cubic-bezier(.2,.85,.25,1) both, chartPulseSoft 4.2s ease-in-out 1s infinite}
+    .animated-bar .seg{transform-origin:left center;animation:barGrowIn .9s ease both}
+    .animated-bar .seg.insufficient{animation-delay:.08s}
+
+    body.dark-mode{--bg:#07111f;--card:#0f172a;--text:#e5eefc;--muted:#94a3b8;--border:#334155;--accent:#60a5fa;--accent2:#93c5fd;--good:#4ade80;--bad:#f87171;--warn:#f59e0b;--shadow:0 10px 28px rgba(0,0,0,.35)}
+    body.dark-mode .notice{background:#0f1d35;border-color:#233a5e;color:#bfdbfe}
+    body.dark-mode .warning{background:#3b2710;border-color:#7c4a12;color:#fdba74}
+    body.dark-mode input,body.dark-mode select,body.dark-mode textarea,body.dark-mode .tab,body.dark-mode .table-wrap,body.dark-mode table,body.dark-mode .formula-guide,body.dark-mode .formula-item,body.dark-mode .metric,body.dark-mode .record-slider,body.dark-mode .record-slider-head,body.dark-mode .record-slide-row,body.dark-mode .record-slide-stat,body.dark-mode .chart-box,body.dark-mode .chart-toolbar .card,body.dark-mode .overall-stat-card,body.dark-mode .pie-stat,body.dark-mode .overall-stat,body.dark-mode .graph-canvas-wrap{background:#0f172a;color:var(--text);border-color:#334155}
+    body.dark-mode th{background:#172554;color:#dbeafe}
+    body.dark-mode td{border-bottom-color:#334155}
+    body.dark-mode .tab.active{background:#1d4ed8;border-color:#60a5fa;color:#eff6ff}
+    body.dark-mode .pill{background:#172554;color:#c7d2fe}
+    body.dark-mode .pills .pill.online{background:#052e16;color:#86efac}
+    body.dark-mode .pills .pill.offline{background:#450a0a;color:#fecaca}
+    body.dark-mode .record-slider{background:linear-gradient(180deg,#111827 0%,#0f172a 100%)}
+    body.dark-mode .record-slider-head{background:linear-gradient(180deg,#172554 0%,#1e293b 100%);border-bottom-color:#334155}
+    body.dark-mode .record-slider-count{background:#0f172a;border-color:#334155;color:#dbeafe}
+    body.dark-mode .saved-records-note{background:#10203d;border-color:#334155;color:#bfdbfe}
+    body.dark-mode .dashboard-pane .card{background:linear-gradient(180deg,#0f172a 0%,#0b1220 100%);border-color:#334155}
+    body.dark-mode .dashboard-pane .chart-box,body.dark-mode .dashboard-pane .chart-toolbar .card{background:linear-gradient(180deg,#0f172a 0%,#111827 100%);border-color:#334155}
+    body.dark-mode .dashboard-pane .chart-box h3,body.dark-mode .dashboard-main-graph-title{color:#c7d2fe;background:none;-webkit-text-fill-color:initial}
+    body.dark-mode .dashboard-main-graph{background:linear-gradient(135deg,#0f172a 0%,#111827 55%,#1e1b4b 100%);border-color:#334155;box-shadow:0 16px 32px rgba(0,0,0,.35)}
+    body.dark-mode .dashboard-main-graph::before{background:linear-gradient(120deg,rgba(255,255,255,.08),transparent 35%,rgba(255,255,255,.04) 65%,transparent)}
+    body.dark-mode .graph-badge{background:#0f172a;border-color:#334155;color:#cbd5e1}
+    body.dark-mode .graph-canvas-wrap{background:linear-gradient(180deg,#0f172a 0%,#111827 100%);border-color:#334155}
+    body.dark-mode .chart-filter-note{background:#10203d !important;border-color:#334155 !important;color:#bfdbfe !important}
+    body.dark-mode .overall-donut::after{background:#0f172a;box-shadow:0 2px 12px rgba(0,0,0,.35)}
+    body.dark-mode .overall-stat-card.sufficient{background:#052e16;border-color:#14532d}
+    body.dark-mode .overall-stat-card.insufficient{background:#450a0a;border-color:#7f1d1d}
+    body.dark-mode .pie-stat,body.dark-mode .overall-stat{background:#111827}
+    body.dark-mode .table-wrap{box-shadow:0 10px 24px rgba(0,0,0,.22)}
+    body.dark-mode .sticky-actions{background:rgba(7,17,31,.94);border-top-color:#334155}
+    body.dark-mode .spreadsheet-header{border-top-color:#334155}
+
+    @keyframes dashboardGradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    @keyframes floatGlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+    .dashboard-pane .card{background:linear-gradient(180deg,#fff8ff 0%,#f8fbff 40%,#ffffff 100%);border:1px solid #e0e7ff}
+    .dashboard-pane .result-grid .metric{color:#fff;border:0;box-shadow:0 10px 24px rgba(37,99,235,.12)}
+    .dashboard-pane .result-grid .metric .name{color:rgba(255,255,255,.88);font-weight:700}
+    .dashboard-pane .result-grid .metric .value{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.12)}
+    .dashboard-pane .result-grid .metric:nth-child(1){background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
+    .dashboard-pane .result-grid .metric:nth-child(2){background:linear-gradient(135deg,#0ea5e9 0%,#2563eb 100%)}
+    .dashboard-pane .result-grid .metric:nth-child(3){background:linear-gradient(135deg,#f97316 0%,#ef4444 100%)}
+    .dashboard-pane .result-grid .metric:nth-child(4){background:linear-gradient(135deg,#22c55e 0%,#15803d 100%)}
+    .dashboard-pane .result-grid .metric:nth-child(5){background:linear-gradient(135deg,#fb7185 0%,#b91c1c 100%)}
+    .dashboard-pane .result-grid .metric:nth-child(6){background:linear-gradient(135deg,#06b6d4 0%,#7c3aed 100%)}
+    .dashboard-pane .table-wrap{border-color:#dbe7ff;box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .dashboard-pane #districtSummaryTable th{background:linear-gradient(135deg,#dbeafe 0%,#ede9fe 100%)}
+    .dashboard-pane .chart-box{border:1px solid #dbe7ff;border-radius:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);box-shadow:0 10px 24px rgba(15,23,42,.05)}
+    .dashboard-pane .chart-box h3{color:#312e81}
+    .dashboard-pane .chart-toolbar .card{background:linear-gradient(180deg,#ffffff 0%,#f5f3ff 100%);border:1px solid #ddd6fe}
+    .dashboard-pane .chart-filter-note{background:linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%);border-color:#c7d2fe;color:#3730a3}
+    .dashboard-main-graph{position:relative;border:1px solid #c7d2fe;background:linear-gradient(135deg,#ffffff 0%,#eff6ff 40%,#f5f3ff 100%);box-shadow:0 16px 32px rgba(79,70,229,.10)}
+    .dashboard-main-graph::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.6),transparent 35%,rgba(255,255,255,.25) 65%,transparent);background-size:200% 200%;animation:dashboardGradientShift 8s ease infinite;border-radius:18px;pointer-events:none}
+    .dashboard-main-graph-head,.graph-canvas-wrap,.graph-footnote{position:relative;z-index:1}
+    .dashboard-main-graph-title{background:linear-gradient(90deg,#4338ca 0%,#7c3aed 50%,#ec4899 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .graph-badge{border-color:#c7d2fe;box-shadow:0 6px 14px rgba(79,70,229,.08);animation:floatGlow 3.6s ease-in-out infinite}
+    .graph-badge.sufficient{background:#f0fdf4;color:#166534}
+    .graph-badge.insufficient{background:#fef2f2;color:#991b1b}
+    .graph-canvas-wrap{border:1px solid #c7d2fe;background:linear-gradient(180deg,#ffffff 0%,#f8faff 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+    .dashboard-pane .overall-stat-card,.dashboard-pane .pie-stat,.dashboard-pane .overall-stat{box-shadow:0 8px 20px rgba(15,23,42,.05)}
+
+    .overall-graphic{display:grid;grid-template-columns:1fr;gap:14px;align-items:center}
+    .overall-graphic-left{display:flex;align-items:center;justify-content:center}
+    .overall-donut-wrap{position:relative;width:min(250px,72vw);height:min(250px,72vw);display:flex;align-items:center;justify-content:center}
+    .overall-donut{width:100%;height:100%;border-radius:50%;position:relative;box-shadow:inset 0 0 0 12px #fff,0 8px 24px rgba(15,23,42,.08)}
+    .overall-donut::after{content:'';position:absolute;inset:22%;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(15,23,42,.08)}
+    .overall-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1;padding:18px}
+    .overall-total-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .overall-total-value{font-size:34px;font-weight:900;color:var(--text);line-height:1.05}
+    .overall-total-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .overall-graphic-right{display:grid;grid-template-columns:1fr;gap:10px}
+    .overall-stat-card{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--border);border-radius:14px;background:#fff;padding:12px 14px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+    .overall-stat-card .info{display:flex;flex-direction:column;gap:3px}
+    .overall-stat-card .label{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    .overall-stat-card .count{font-size:22px;font-weight:900;line-height:1.05}
+    .overall-stat-card .pct{font-size:13px;font-weight:800}
+    .overall-stat-card.sufficient{border-color:#bbf7d0;background:#f0fdf4}
+    .overall-stat-card.sufficient .count,.overall-stat-card.sufficient .pct{color:#166534}
+    .overall-stat-card.insufficient{border-color:#fecaca;background:#fef2f2}
+    .overall-stat-card.insufficient .count,.overall-stat-card.insufficient .pct{color:#991b1b}
+    .overall-progress{margin-top:2px}
+    .overall-progress-labels{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
+    .overall-bar{display:flex;width:100%;height:22px;border-radius:999px;overflow:hidden;background:#e5e7eb;border:1px solid var(--border);box-shadow:inset 0 1px 3px rgba(15,23,42,.06)}
+    .overall-bar .seg{height:100%}
+    .overall-bar .seg.sufficient{background:linear-gradient(90deg,#22c55e 0%,#15803d 100%)}
+    .overall-bar .seg.insufficient{background:linear-gradient(90deg,#ef4444 0%,#b91c1c 100%)}
+    .overall-summary-note{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:6px}
+    @media (min-width:700px){
+      .overall-graphic{grid-template-columns:.95fr 1.05fr}
+    }
+
+    .dashboard-main-graph{margin-top:14px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);padding:16px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+    .dashboard-main-graph-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .dashboard-main-graph-title{font-size:17px;font-weight:900;color:#1d4ed8;margin:0}
+    .dashboard-main-graph-sub{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:4px}
+    .graph-badges{display:flex;gap:8px;flex-wrap:wrap}
+    .graph-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;background:#fff;color:var(--muted)}
+    .graph-badge::before{content:'';width:10px;height:10px;border-radius:3px;display:inline-block}
+    .graph-badge.sufficient::before{background:#15803d}
+    .graph-badge.insufficient::before{background:#b91c1c}
+    .graph-canvas-wrap{width:100%;height:380px;border:1px solid #dbe7ff;border-radius:16px;background:#fff;overflow:hidden;padding:10px}
+    #dashboardMainGraph{width:100%;height:100%;display:block}
+    .graph-footnote{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.4}
+    @media (max-width:699px){
+      .dashboard-main-graph{padding:12px;border-radius:16px}
+      .dashboard-main-graph-title{font-size:16px}
+      .graph-canvas-wrap{height:340px;padding:8px}
+      .graph-badge{font-size:11.5px;padding:5px 8px}
+      .top-actions{justify-content:stretch}
+      .theme-toggle-btn{width:100%}
+    }
+
+
+
+
+    .dashboard-pane{position:relative}
+    .dashboard-pane::before,.dashboard-pane::after{content:'';position:fixed;z-index:-1;border-radius:999px;filter:blur(50px);opacity:.38;pointer-events:none}
+    .dashboard-pane::before{width:260px;height:260px;top:90px;right:5%;background:radial-gradient(circle,#60a5fa 0%,rgba(96,165,250,0) 72%)}
+    .dashboard-pane::after{width:320px;height:320px;bottom:70px;left:3%;background:radial-gradient(circle,#c084fc 0%,rgba(192,132,252,0) 72%)}
+    .premium-dashboard-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.55)!important;background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(248,250,255,.84) 100%)!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 24px 54px rgba(15,23,42,.12)!important;border-radius:30px!important}
+    .premium-dashboard-card::before{content:'';position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.48),transparent 26%,rgba(255,255,255,.22) 56%,transparent 76%);pointer-events:none}
+    .dashboard-headerbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;position:relative;z-index:1;margin-bottom:12px}
+    .dashboard-headerbar h2{margin:0 0 6px 0;font-size:30px;line-height:1.05;background:linear-gradient(90deg,#4338ca 0%,#0ea5e9 40%,#ec4899 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .dashboard-header-sub{font-size:13px;line-height:1.5;color:#475569;max-width:720px;font-weight:600}
+    .dashboard-status-chip{display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;background:linear-gradient(135deg,rgba(79,70,229,.12),rgba(236,72,153,.12));border:1px solid rgba(99,102,241,.2);box-shadow:0 8px 18px rgba(79,70,229,.08);font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#4338ca}
+    .dashboard-pane .result-grid{gap:16px;margin-top:18px}
+    .dashboard-pane .result-grid .metric{position:relative;overflow:hidden;min-height:128px;padding:22px 20px;border-radius:24px!important;border:1px solid rgba(255,255,255,.35)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 32px rgba(15,23,42,.14)!important;transition:transform .22s ease, box-shadow .22s ease}
+    .dashboard-pane .result-grid .metric:hover{transform:translateY(-3px);box-shadow:0 22px 40px rgba(15,23,42,.16)!important}
+    .dashboard-pane .result-grid .metric::after{content:'';position:absolute;inset:auto -10% -40% auto;width:120px;height:120px;border-radius:999px;background:rgba(255,255,255,.18);filter:blur(4px)}
+    .dashboard-pane .result-grid .metric .name{font-size:13px;letter-spacing:.02em}
+    .dashboard-pane .result-grid .metric .value{font-size:34px;line-height:1.05;margin-top:8px}
+    .dashboard-pane .table-wrap{border-radius:22px!important;background:linear-gradient(180deg,rgba(255,255,255,.84) 0%,rgba(248,250,255,.9) 100%);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .dashboard-pane .chart-toolbar{gap:18px;margin-top:18px;margin-bottom:18px}
+    .dashboard-pane .chart-toolbar .card{border-radius:24px!important;padding:18px!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 16px 36px rgba(15,23,42,.10)!important}
+    .dashboard-pane .chart-section{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:18px}
+    .dashboard-pane .chart-box{position:relative;overflow:hidden;min-height:260px;padding:20px 20px 18px;border-radius:26px!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.45)!important;box-shadow:0 18px 36px rgba(15,23,42,.10)!important;transition:transform .22s ease, box-shadow .22s ease}
+    .dashboard-pane .chart-box:hover{transform:translateY(-3px);box-shadow:0 24px 42px rgba(15,23,42,.14)!important}
+    .dashboard-pane .chart-box::before{content:'';position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.38),transparent 35%,rgba(255,255,255,.14) 75%,transparent);pointer-events:none}
+    .dashboard-pane .chart-box > *{position:relative;z-index:1}
+    .dashboard-pane .chart-box:nth-child(1){background:linear-gradient(180deg,rgba(239,246,255,.92) 0%,rgba(255,255,255,.86) 100%)!important;border-color:rgba(147,197,253,.55)!important}
+    .dashboard-pane .chart-box:nth-child(2){background:linear-gradient(180deg,rgba(250,245,255,.92) 0%,rgba(255,255,255,.86) 100%)!important;border-color:rgba(216,180,254,.55)!important}
+    .dashboard-pane .chart-box:nth-child(3){background:linear-gradient(180deg,rgba(236,253,245,.92) 0%,rgba(255,255,255,.86) 100%)!important;border-color:rgba(110,231,183,.55)!important}
+    .dashboard-pane .chart-box:nth-child(4){background:linear-gradient(180deg,rgba(255,247,237,.92) 0%,rgba(255,255,255,.86) 100%)!important;border-color:rgba(253,186,116,.55)!important}
+    .dashboard-pane .chart-box h3{font-size:18px;font-weight:900;line-height:1.2}
+    .dashboard-pane .chart-box .small{font-size:12.5px;line-height:1.5}
+    body.dark-mode .dashboard-pane::before{background:radial-gradient(circle,rgba(59,130,246,.34) 0%,rgba(59,130,246,0) 72%)}
+    body.dark-mode .dashboard-pane::after{background:radial-gradient(circle,rgba(236,72,153,.28) 0%,rgba(236,72,153,0) 72%)}
+    body.dark-mode .premium-dashboard-card{background:linear-gradient(180deg,rgba(15,23,42,.80) 0%,rgba(17,24,39,.88) 100%)!important;border-color:rgba(148,163,184,.18)!important;box-shadow:0 24px 54px rgba(0,0,0,.34)!important}
+    body.dark-mode .premium-dashboard-card::before{background:linear-gradient(120deg,rgba(255,255,255,.08),transparent 26%,rgba(255,255,255,.04) 56%,transparent 76%)}
+    body.dark-mode .dashboard-header-sub{color:#a5b4fc}
+    body.dark-mode .dashboard-status-chip{background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(236,72,153,.12));border-color:rgba(96,165,250,.22);color:#dbeafe}
+    body.dark-mode .dashboard-pane .result-grid .metric{border-color:rgba(148,163,184,.16)!important;box-shadow:0 16px 32px rgba(0,0,0,.26)!important}
+    body.dark-mode .dashboard-pane .table-wrap{background:linear-gradient(180deg,rgba(15,23,42,.82) 0%,rgba(17,24,39,.88) 100%)}
+    body.dark-mode .dashboard-pane .chart-toolbar .card{background:linear-gradient(180deg,rgba(15,23,42,.82) 0%,rgba(17,24,39,.88) 100%)!important;border-color:rgba(148,163,184,.16)!important;box-shadow:0 16px 36px rgba(0,0,0,.24)!important}
+    body.dark-mode .dashboard-pane .chart-box{border-color:rgba(148,163,184,.16)!important;box-shadow:0 18px 36px rgba(0,0,0,.24)!important}
+    body.dark-mode .dashboard-pane .chart-box:nth-child(1){background:linear-gradient(180deg,rgba(30,41,59,.92) 0%,rgba(15,23,42,.88) 100%)!important}
+    body.dark-mode .dashboard-pane .chart-box:nth-child(2){background:linear-gradient(180deg,rgba(30,27,75,.92) 0%,rgba(15,23,42,.88) 100%)!important}
+    body.dark-mode .dashboard-pane .chart-box:nth-child(3){background:linear-gradient(180deg,rgba(20,83,45,.32) 0%,rgba(15,23,42,.88) 100%)!important}
+    body.dark-mode .dashboard-pane .chart-box:nth-child(4){background:linear-gradient(180deg,rgba(124,45,18,.30) 0%,rgba(15,23,42,.88) 100%)!important}
+    @media (max-width:860px){
+      .dashboard-headerbar h2{font-size:24px}
+      .dashboard-pane .result-grid .metric{min-height:110px;padding:18px 16px;border-radius:20px!important}
+      .dashboard-pane .result-grid .metric .value{font-size:28px}
+      .dashboard-pane .chart-section{grid-template-columns:1fr}
+      .dashboard-pane .chart-box{min-height:auto;padding:18px;border-radius:22px!important}
+    }
+
+    .presentable-legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+    .presentable-legend .legend-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:800;color:var(--muted);box-shadow:0 4px 12px rgba(15,23,42,.04)}
+    .presentable-legend .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .presentable-legend .dot.sufficient{background:linear-gradient(135deg,#22c55e 0%,#15803d 100%)}
+    .presentable-legend .dot.insufficient{background:linear-gradient(135deg,#fb7185 0%,#b91c1c 100%)}
+    .chart-summary-note{padding:10px 12px;border-radius:12px;background:linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%);border:1px solid #dbe7ff;color:#334155;font-size:12.5px;line-height:1.45;margin-top:10px}
+    .pretty-pie-layout{display:grid;grid-template-columns:1fr;gap:14px;align-items:center}
+    .pretty-pie-visual{display:flex;align-items:center;justify-content:center}
+    .pretty-pie-ring-wrap{position:relative;width:min(230px,70vw);height:min(230px,70vw)}
+    .pretty-pie-ring{width:100%;height:100%;border-radius:50%;position:relative;box-shadow:0 16px 30px rgba(15,23,42,.10), inset 0 0 0 12px rgba(255,255,255,.95)}
+    .pretty-pie-ring::after{content:'';position:absolute;inset:24%;border-radius:50%;background:var(--card);box-shadow:0 3px 14px rgba(15,23,42,.10)}
+    .pretty-pie-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;text-align:center;padding:14px}
+    .pretty-pie-center .top{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+    .pretty-pie-center .big{font-size:34px;font-weight:900;line-height:1;color:var(--text)}
+    .pretty-pie-center .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .pretty-pie-stats{display:grid;grid-template-columns:1fr;gap:10px}
+    .pretty-stat-card{border:1px solid var(--border);border-radius:16px;padding:14px;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.05)}
+    .pretty-stat-card .label{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+    .pretty-stat-card .row{display:flex;align-items:end;justify-content:space-between;gap:10px;margin-top:8px}
+    .pretty-stat-card .count{font-size:28px;font-weight:900;line-height:1}
+    .pretty-stat-card .pct{font-size:14px;font-weight:800}
+    .pretty-stat-card.sufficient{background:linear-gradient(180deg,#f0fdf4 0%,#ffffff 100%);border-color:#bbf7d0}
+    .pretty-stat-card.sufficient .count,.pretty-stat-card.sufficient .pct{color:#166534}
+    .pretty-stat-card.insufficient{background:linear-gradient(180deg,#fef2f2 0%,#ffffff 100%);border-color:#fecaca}
+    .pretty-stat-card.insufficient .count,.pretty-stat-card.insufficient .pct{color:#991b1b}
+    .grouped-pretty-list{display:grid;grid-template-columns:1fr;gap:12px}
+    .grouped-pretty-card{border:1px solid var(--border);border-radius:16px;padding:14px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);box-shadow:0 8px 18px rgba(15,23,42,.05)}
+    .grouped-pretty-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .grouped-pretty-title{font-size:15px;font-weight:900;color:var(--text)}
+    .grouped-pretty-total{padding:6px 10px;border-radius:999px;background:#eef2ff;border:1px solid #c7d2fe;font-size:12px;font-weight:800;color:#3730a3}
+    .grouped-pretty-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+    .grouped-pretty-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid var(--border);background:#fff;color:var(--muted)}
+    .grouped-pretty-pill .mini{width:10px;height:10px;border-radius:999px;display:inline-block}
+    .grouped-pretty-pill .mini.sufficient{background:#16a34a}
+    .grouped-pretty-pill .mini.insufficient{background:#dc2626}
+    .grouped-pretty-track{display:flex;width:100%;height:18px;border-radius:999px;overflow:hidden;background:#e5e7eb;border:1px solid var(--border);box-shadow:inset 0 1px 2px rgba(15,23,42,.08)}
+    .grouped-pretty-track .seg{height:100%}
+    .grouped-pretty-track .seg.sufficient{background:linear-gradient(90deg,#22c55e 0%,#15803d 100%)}
+    .grouped-pretty-track .seg.insufficient{background:linear-gradient(90deg,#fb7185 0%,#b91c1c 100%)}
+    .grouped-pretty-foot{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:var(--muted);font-weight:700;flex-wrap:wrap}
+    body.dark-mode .presentable-legend .legend-chip, body.dark-mode .pretty-stat-card, body.dark-mode .grouped-pretty-card, body.dark-mode .grouped-pretty-pill{background:#0f172a;border-color:#334155;color:#cbd5e1}
+    body.dark-mode .chart-summary-note{background:linear-gradient(135deg,#10203d 0%,#1f2937 100%);border-color:#334155;color:#cbd5e1}
+    body.dark-mode .pretty-pie-ring::after{background:#0f172a;box-shadow:0 3px 14px rgba(0,0,0,.3)}
+    body.dark-mode .pretty-stat-card.sufficient{background:linear-gradient(180deg,#052e16 0%,#0f172a 100%);border-color:#14532d}
+    body.dark-mode .pretty-stat-card.insufficient{background:linear-gradient(180deg,#450a0a 0%,#0f172a 100%);border-color:#7f1d1d}
+    body.dark-mode .grouped-pretty-total{background:#172554;border-color:#334155;color:#dbeafe}
+    body.dark-mode .grouped-pretty-track{background:#1f2937;border-color:#334155}
+    @media (min-width:760px){
+      .pretty-pie-layout{grid-template-columns:.95fr 1.05fr}
+      .pretty-pie-stats{grid-template-columns:1fr 1fr}
+    }
+
+    .canvas-chart-wrap{width:100%;height:420px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);overflow:hidden;padding:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+    .canvas-chart-wrap canvas{width:100%;height:100%;display:block}
+    .canvas-chart-note{margin-top:10px}
+    body.dark-mode .canvas-chart-wrap{background:linear-gradient(180deg,#0f172a 0%,#111827 100%);border-color:#334155;box-shadow:none}
+    @media (max-width:699px){
+      .canvas-chart-wrap{height:360px;padding:8px}
+    }
+
+    .record-slider{margin-bottom:14px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);box-shadow:0 10px 24px rgba(15,23,42,.06);overflow:hidden}
+    .record-slider-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#eef4ff;border-bottom:1px solid #dbe7ff;flex-wrap:wrap}
+    .record-slider-title{font-size:15px;font-weight:800;color:#1d4ed8}
+    .record-slider-count{padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #dbe7ff;color:#374151;font-size:12px;font-weight:800}
+    .record-slider-body{padding:16px;background:transparent}
+    .record-slider-empty{padding:18px;border:1px dashed var(--border);border-radius:14px;text-align:center;color:var(--muted);background:#fff}
+    .record-slide-card{display:grid;grid-template-columns:1fr;gap:14px}
+    .record-slide-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .record-slide-stat{border:1px solid #dbe7ff;border-radius:14px;background:#fff;padding:12px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+    .record-slide-stat .stat-label{font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:700}
+    .record-slide-stat .stat-value{font-size:18px;font-weight:800;line-height:1.25;word-break:break-word}
+    .record-slide-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .record-slide-row{display:flex;flex-direction:column;gap:6px;border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff;min-width:0}
+    .record-slide-label{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+    .record-slide-value{font-size:14px;line-height:1.45;font-weight:700;color:var(--text);word-break:break-word}
+    .record-slide-value.muted{font-weight:600;color:var(--muted)}
+    .record-slide-value.full-width{white-space:pre-wrap}
+    .record-slide-status{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;width:auto;max-width:fit-content}
+    .record-slide-status.sufficient{background:#dcfce7;color:#166534;border:1px solid #86efac}
+    .record-slide-status.insufficient{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+    .record-slider-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 16px 16px}
+    .record-slider-actions button{min-height:44px}
+    .record-slider-dots{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 16px 16px}
+    .record-dot{width:10px;height:10px;border-radius:999px;background:#cbd5e1;display:inline-block;transition:.2s ease}
+    .record-dot.active{background:#2563eb;transform:scale(1.18)}
+    .saved-records-note{margin-top:0;margin-bottom:10px}
+    .sticky-actions{border-top:1px solid rgba(209,213,219,.95);box-shadow:0 -10px 30px rgba(15,23,42,.06)}
+    .sticky-actions .inner{align-items:stretch}
+    .sticky-actions button{box-shadow:0 4px 12px rgba(15,23,42,.08)}
+    @media (min-width:700px){
+      .record-slide-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .record-slide-main{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+
+    .spreadsheet-header { margin-top: 24px; padding-top: 16px; border-top: 2px solid var(--border); }
+    
+    @media (min-width:700px){
+      .wrap{padding:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.row{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .result-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.sticky-actions .inner{grid-template-columns:repeat(6,minmax(0,1fr))}
+      .two-col{grid-template-columns:1.3fr .7fr}
+      .formula-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media (max-width:699px){
+      .wrap{padding:10px max(10px, env(safe-area-inset-left)) 10px max(10px, env(safe-area-inset-right))}
+      .card{padding:12px;border-radius:14px;margin-bottom:12px}
+      h1{font-size:22px} h2{font-size:18px} h3{font-size:15px}
+      .sub,.small,.notice{font-size:12.5px}
+      input,select,textarea{min-height:46px;padding:10px 12px;font-size:16px;border-radius:11px}
+      button{min-height:46px;padding:10px 12px;font-size:14px;border-radius:11px}
+      .tabs{display:flex;grid-template-columns:none;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scroll-snap-type:x proximity}
+      .tab{flex:0 0 auto;min-width:112px;min-height:44px;font-size:12px;scroll-snap-align:start}
+      .result-grid,.grid,.grid-3,.row,.two-col{grid-template-columns:1fr}
+      .metric{padding:12px}.metric .value{font-size:20px}
+      .chip-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chip-label{width:100%}.chip-text{width:100%;text-align:center;padding:10px 12px;font-size:13px}
+      .photo-wrap img{min-height:150px;max-height:240px}
+      #mapFrame{height:min(62vh,420px)}
+      .sticky-actions{padding:7px 0 calc(7px + env(safe-area-inset-bottom)) 0}
+      .sticky-actions .wrap{padding-left:8px;padding-right:8px}
+      .sticky-actions .inner{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .sticky-actions button{font-size:12px;line-height:1.2;padding:9px 8px;min-height:44px}
+      #addBtn{grid-column:1 / -1;min-height:48px;font-size:14px}
+      .pagination-controls{gap:8px}.pagination-controls button{flex:1;min-width:0}
+      .table-wrap{border-radius:12px}
+      .record-slider-head{padding:12px}
+      .record-slider-body{padding:12px}
+      .record-slide-summary,.record-slide-main{grid-template-columns:1fr}
+      .record-slider-actions{padding:0 12px 12px;grid-template-columns:1fr 1fr}
+      #deleteSavedSlideBtn{grid-column:1 / -1}
+      .record-slide-stat .stat-value{font-size:17px}
+    }
+    @media (max-width:520px){
+      .pills{gap:6px}.pill{font-size:11px;padding:5px 8px}
+      .chip-group{grid-template-columns:1fr}
+      #recordsTable{min-width:0;border-collapse:separate;border-spacing:0 10px;background:transparent}
+      #recordsTable thead{display:none}
+      #recordsTable tbody,#recordsTable tr,#recordsTable td{display:block;width:100%}
+      #recordsTable tr{border:1px solid var(--border);border-radius:12px;background:#fff;padding:4px;margin-bottom:10px;box-shadow:0 3px 10px rgba(15,23,42,.04)}
+      #recordsTable td{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:0;border-bottom:1px dashed #e5e7eb;padding:9px 10px;font-size:13px;max-width:none;text-align:right}
+      #recordsTable td::before{content:attr(data-label);font-weight:700;color:var(--muted);min-width:112px;text-align:left;flex:0 0 42%}
+      #recordsTable td:last-child{border-bottom:0}
+      #recordsTable td.empty-cell{display:block;text-align:center}
+      #recordsTable td.empty-cell::before{content:none}
+      #recordsTable .row-delete-btn{width:100%;min-height:40px}
+      .report-photo-thumb{width:58px;height:58px;max-width:58px;max-height:58px;margin-left:auto}
+    }
+    @media (max-width:380px){
+      .sticky-actions .inner{grid-template-columns:1fr 1fr}
+      .sticky-actions button{font-size:11.5px;padding-left:6px;padding-right:6px}
+      #addBtn{grid-column:1 / -1}
+      .record-slider-actions{grid-template-columns:1fr}
+      .record-slider-actions button{min-height:42px}
+      #deleteSavedSlideBtn{grid-column:auto}
+      #recordsTable td{font-size:12.5px;gap:8px}
+      #recordsTable td::before{min-width:98px}
+    }
+
+    @media print{
+      body{background:#fff}.card{box-shadow:none;border:1px solid #ddd}.sticky-actions,.tabs,#installBtn,.notice:not(.printable),#photoBtn,#gpsBtn,#todayBtn,#syncNowBtn,#deleteAllBtn,#exportCsvBtn,#exportCsvBtn2,#exportExcelBtn,#exportExcelBtn2,#dashboardExportChartExcelBtn,#dashboardExportChartPdfBtn,#reportExportChartExcelBtn,#reportExportChartPdfBtn,#clearFormBtn,#onlineSheetBtn,.no-print,.pagination-controls{display:none !important}
+      .tabpane{display:block !important}
+      .wrap{max-width:none;padding:0}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Shallow Well Survey App</h1>
+    <div class="sub">Installable phone-friendly app with dashboard, map, summary tables, offline save, and optional Google Sheets sync.</div>
+    <div class="pills">
+      <span class="pill">Installable</span><span class="pill">GPS</span><span class="pill">Camera</span><span class="pill">Dashboard</span><span class="pill">Map</span><span class="pill">Print</span><span class="pill">Sync Ready</span><span class="pill" id="connectionPill">Checking...</span>
+    </div>
+    <div class="app-status"><div class="notice printable" id="appStatusText">Use the tabs below. Records save on this device first. When online, sync to Google Sheets from Settings.</div></div>
+    <div class="top-actions no-print"><button type="button" class="ghost theme-toggle-btn" id="themeToggleBtn">🌙 Dark Mode</button></div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="form">Form</button>
+      <button class="tab" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="map">Map</button>
+      <button class="tab" data-tab="report">Summary Table</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+  </div>
+
+  <div id="form" class="tabpane active">
+    <div class="card">
+      <h2>Interview and Well Information</h2>
+      <div class="grid">
+        <div class="field">
+          <label>1. District</label>
+          <select id="district">
+            <option value="">Select District</option>
+            <option>City Proper</option><option>Arevalo</option><option>Mandurriao</option>
+            <option>LaPaz</option><option>Jaro</option><option>Lapuz</option><option>Molo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>2. Barangay</label>
+          <select id="barangay">
+            <option value="">Select Barangay</option>
+          </select>
+        </div>
+        <div class="field"><label>3. Zone</label><input id="zone" type="text" /></div>
+        <div class="field"><label>4A. GPS Coordinate Latitude X</label><input id="latX" type="number" step="any" inputmode="decimal" /></div>
+        <div class="field"><label>4B. GPS Coordinate Latitude Y</label><input id="latY" type="number" step="any" inputmode="decimal" /></div>
+        <div class="field"><label>5. Name of the Interviewee</label><input id="interviewee" type="text" /></div>
+        <div class="field"><label>6. Date and Time of Interview</label><input id="interviewDateTime" type="datetime-local" /></div>
+        <div class="field"><label>7. Gina-usar sang Pamilya (Owned)</label><select id="usedByFamily"><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+        <div class="field"><label>8. Gina-usar sang pamilya kag pumuluyo</label><select id="usedByFamilyResidents"><option value="">Select</option><option>Yes</option><option>No</option></select></div>
+        <div class="field"><label>9. Pila ka tawo ang naga-usar sang tubig sang bubon adlaw (Population)</label><input id="population" type="number" min="0" inputmode="numeric" /></div>
+        <div class="field"><label>10. Pila ka tabay ang bubon (1-10 or manual)</label><input id="wellDepth" type="number" min="0" step="0.01" inputmode="decimal" /></div>
+        <div class="field"><label>11. Pila ka tabay ang normal na level (1-10)</label><input id="normalLevel" type="number" min="0" step="0.01" inputmode="decimal" /></div>
+        <div class="field"><label>12. Pila ka tabay sa subong (1-10)</label><input id="currentLevel" type="number" min="0" step="0.01" inputmode="decimal" /></div>
+        
+        <div class="field">
+          <label>13. Other water source (Select multiple)</label>
+          <div class="chip-group">
+            <label class="chip-label"><input type="checkbox" name="otherWaterSource" value="MIWD"><span class="chip-text">MIWD</span></label>
+            <label class="chip-label"><input type="checkbox" name="otherWaterSource" value="Water refilling station"><span class="chip-text">Water refilling station</span></label>
+            <label class="chip-label"><input type="checkbox" name="otherWaterSource" value="Delivery"><span class="chip-text">Delivery</span></label>
+            <label class="chip-label"><input type="checkbox" name="otherWaterSource" id="otherWaterSourceOthers" value="Others"><span class="chip-text">Others</span></label>
+          </div>
+          <input type="text" id="otherWaterSourceText" placeholder="Please specify other source..." style="display:none; margin-top: 8px;" />
+        </div>
+
+        <div class="field"><label>14. Sa diin gina usar ang tubig</label><input id="waterUse" type="text" placeholder="Manual input" /></div>
+        <div class="field"><label>21. Remarks</label><textarea id="remarks"></textarea></div>
+      </div>
+      <div class="row">
+        <button type="button" id="gpsBtn">Detect GPS Coordinate</button>
+        <button type="button" class="secondary" id="photoBtn">Take or Choose Photo</button>
+        <button type="button" class="ghost" id="todayBtn">Set Date and Time Now</button>
+      </div>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
+      <div class="two-col" style="margin-top:14px">
+        <div class="field"><label>Photo File Name</label><input id="photoName" type="text" readonly /></div>
+        <div class="photo-wrap"><label>Photo Preview</label><img id="photoPreview" alt="No photo selected" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Automatic Computation</h2>
+      <div class="result-grid">
+        <div class="metric"><div class="name">15. Volume per Shallow Well</div><div class="value" id="volumePerWell">0 L</div></div>
+        <div class="metric"><div class="name">16. Total Daily Water Need</div><div class="value" id="dailyNeed">0 L</div></div>
+        <div class="metric"><div class="name">17. Current Supply of Shallow Wells</div><div class="value" id="currentSupply">0 L</div></div>
+        <div class="metric"><div class="name">18. Available Water Supply</div><div class="value" id="availableSupply">0 L</div></div>
+        <div class="metric"><div class="name">19. Status of Water Sufficiency</div><div class="value" id="status">Sufficient</div></div>
+        <div class="metric"><div class="name">20. Individuals Affected</div><div class="value" id="affected">0</div></div>
+      </div>
+
+      <details class="formula-guide" open>
+        <summary>Formula Guide</summary>
+        <div class="formula-list">
+          <div class="formula-item">
+            <strong>15. Volume per Shallow Well</strong>
+            <code>Normal Level × 200 L</code>
+            <div class="small">Uses the normal water level to estimate the well volume.</div>
+          </div>
+          <div class="formula-item">
+            <strong>16. Total Daily Water Need</strong>
+            <code>Population × 30 L per person/day</code>
+            <div class="small">Estimates the daily water requirement of the people using the well.</div>
+          </div>
+          <div class="formula-item">
+            <strong>17. Current Supply of Shallow Wells</strong>
+            <code>Current Level × 200 L</code>
+            <div class="small">Estimates the available water based on the current water level.</div>
+          </div>
+          <div class="formula-item">
+            <strong>18. Available Water Supply</strong>
+            <code>Current Supply − Total Daily Water Need</code>
+            <div class="small">Positive result means enough supply; negative result means shortage.</div>
+          </div>
+          <div class="formula-item">
+            <strong>19. Status of Water Sufficiency</strong>
+            <code>If Available Supply ≥ 0 = Sufficient; otherwise = Insufficient</code>
+            <div class="small">Automatically checks if the current supply can cover the daily need.</div>
+          </div>
+          <div class="formula-item">
+            <strong>20. Individuals Affected</strong>
+            <code>If Insufficient = Population; if Sufficient = 0</code>
+            <div class="small">Counts affected individuals when the water supply is insufficient.</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Saved Records</h2>
+      <div class="notice saved-records-note no-print">Use the slider below to view one saved record at a time with a cleaner layout. You can still review all records in the table below.</div>
+      <div class="record-slider no-print" id="savedRecordSliderBox">
+        <div class="record-slider-head">
+          <div class="record-slider-title">Saved Records Slider View</div>
+          <div class="record-slider-count" id="savedRecordSliderCount">Record 0 of 0</div>
+        </div>
+        <div class="record-slider-body" id="savedRecordSlider">
+          <div class="record-slider-empty">No saved records yet.</div>
+        </div>
+        <div class="record-slider-actions">
+          <button type="button" class="secondary" id="prevSavedSlideBtn">Previous</button>
+          <button type="button" class="danger" id="deleteSavedSlideBtn">Delete Current</button>
+          <button type="button" class="secondary" id="nextSavedSlideBtn">Next</button>
+        </div>
+        <div class="record-slider-dots" id="savedRecordSliderDots"></div>
+      </div>
+      <div class="table-wrap">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th>District</th><th>Barangay</th><th>Zone</th><th>Interviewee</th><th>Date/Time</th><th>Population</th><th>Normal Level</th><th>Current Level</th><th>Other Water Sources</th><th>Sa diin gina usar ang tubig</th><th>Daily Need</th><th>Current Supply</th><th>Available Supply</th><th>Status</th><th>Affected</th><th class="no-print">Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pagination-controls no-print" id="recordsPagination">
+        <button type="button" class="secondary" id="prevRecordsPage">Previous</button>
+        <span class="page-info" id="recordsPageInfo">Page 1 of 1</span>
+        <button type="button" class="secondary" id="nextRecordsPage">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard" class="tabpane dashboard-pane">
+    <div class="card premium-dashboard-card">
+      <div class="dashboard-headerbar">
+        <div>
+          <h2>Dashboard Summary</h2>
+          <div class="dashboard-header-sub">Premium glass-style analytics dashboard with larger chart cards and live animated counters.</div>
+        </div>
+        <div class="dashboard-status-chip">Live Analytics</div>
+      </div>
+      <div class="result-grid">
+        <div class="metric"><div class="name">Total Records</div><div class="value" id="dashRecords">0</div></div>
+        <div class="metric"><div class="name">Total Population</div><div class="value" id="dashPopulation">0</div></div>
+        <div class="metric"><div class="name">Individuals Affected</div><div class="value" id="dashAffected">0</div></div>
+        <div class="metric"><div class="name">Sufficient Wells</div><div class="value" id="dashSufficient">0</div></div>
+        <div class="metric"><div class="name">Insufficient Wells</div><div class="value" id="dashInsufficient">0</div></div>
+        <div class="metric"><div class="name">Total Available Supply</div><div class="value" id="dashSupply">0 L</div></div>
+      </div>
+
+      <div class="dashboard-main-graph">
+        <div class="dashboard-main-graph-head">
+          <div>
+            <h3 class="dashboard-main-graph-title">Dashboard Graph: Water Sufficiency by District</h3>
+            <div class="dashboard-main-graph-sub">Automatically updates when records are added, deleted, or filtered.</div>
+          </div>
+          <div class="graph-badges">
+            <span class="graph-badge palette">Per-District Colors</span>
+            <span class="graph-badge shade">Dark Shade = Insufficient</span>
+          </div>
+        </div>
+        <div class="graph-canvas-wrap">
+          <canvas id="dashboardMainGraph"></canvas>
+        </div>
+        <div class="graph-footnote">Tip: Use the district/barangay filters below to change the graph data.</div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="districtSummaryTable">
+          <thead><tr><th>District</th><th>Records</th><th>Population</th><th>Affected</th><th>Sufficient</th><th>Insufficient</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="chart-toolbar no-print">
+        <div class="card" style="margin:0;box-shadow:none">
+          <h3>Chart Filters</h3>
+          <div class="small">Filter the statistics and charts by district and barangay.</div>
+          <div class="filter-grid" style="margin-top:10px">
+            <div class="field">
+              <label>District Filter</label>
+              <select id="chartDistrictFilter"><option value="">All Districts</option></select>
+            </div>
+            <div class="field">
+              <label>Barangay Filter</label>
+              <select id="chartBarangayFilter"><option value="">All Barangays</option></select>
+            </div>
+          </div>
+          <div class="filter-actions" style="margin-top:10px">
+            <button type="button" class="ghost" id="resetChartFiltersBtn">Reset Filters</button>
+          </div>
+          <div class="notice chart-filter-note" id="chartFilterStatus">Showing all records.</div>
+        </div>
+        <div class="card" style="margin:0;box-shadow:none">
+          <h3>Chart Export</h3>
+          <div class="small">Export the filtered statistics as Excel or PDF.</div>
+          <div class="mini-actions" style="margin-top:10px">
+            <button type="button" class="secondary" id="dashboardExportChartExcelBtn">Export Chart Excel</button>
+            <button type="button" class="secondary" id="dashboardExportChartPdfBtn">Export Chart PDF</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-box">
+          <h3>Overall Water Sufficiency Chart</h3>
+          <div class="small">Shows the overall count of records with sufficient and insufficient water supply.</div>
+          <div id="overallStatusChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>Water Sufficiency Pie Chart</h3>
+          <div class="small">A quick visual distribution of sufficient and insufficient records.</div>
+          <div id="statusPieChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>District Water Sufficiency Statistics</h3>
+          <div class="small">Graphic chart per district showing how many records are Sufficient and Insufficient.</div>
+          <div id="districtStatsChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>Barangay Water Sufficiency Statistics</h3>
+          <div class="small">Graphic chart per barangay showing how many records are Sufficient and Insufficient.</div>
+          <div class="canvas-chart-wrap"><canvas id="barangayStatsCanvas"></canvas></div>
+          <div class="small canvas-chart-note">This chart displays the top barangays based on the current filter. Light color = Sufficient, darker color = Insufficient.</div>
+          <div id="barangayStatsChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="map" class="tabpane">
+    <div class="card">
+      <h2>Map View</h2>
+      <iframe id="mapFrame" title="Map View"></iframe>
+    </div>
+  </div>
+
+  <div id="report" class="tabpane">
+    <div class="card">
+      <h2>Summary Table & Spreadsheet</h2>
+      <div class="row">
+        <button id="printBtn">Print Summary</button>
+        <button class="secondary" id="exportCsvBtn">Export CSV</button>
+        <button class="secondary" id="exportExcelBtn">Export Excel</button>
+        <button class="secondary" id="reportExportChartExcelBtn">Export Chart Excel</button>
+        <button class="secondary" id="reportExportChartPdfBtn">Export Chart PDF</button>
+        <button class="ghost" id="onlineSheetBtn">Spreadsheet Online</button>
+      </div>
+      <div id="reportContent" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div id="settings" class="tabpane">
+    <div class="card">
+      <h2>Settings, Offline App, and Online Sync</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Google Apps Script Web App URL</label>
+          <input id="syncUrl" type="url" placeholder="Paste your deployed Google Apps Script Web App URL" />
+        </div>
+      </div>
+      <div class="row">
+        <button id="syncNowBtn">Sync Now</button>
+        <button class="ghost" id="installBtn">Install App</button>
+        <button class="warn" id="deleteAllBtn">Delete All Records</button>
+      </div>
+      <div id="syncStatus" class="notice warning">No sync URL saved yet.</div><div class="notice">Offline mode: records are saved on this device using local storage. Online mode: press Sync Now or add records while online to send data to Google Sheets.</div>
+    </div>
+  </div>
+
+  <div class="sticky-actions">
+    <div class="wrap" style="padding-top:0;padding-bottom:0">
+      <div class="inner">
+        <button class="success" id="addBtn">Add Record</button>
+        <button class="secondary" id="clearFormBtn">Clear Form</button>
+        <button class="secondary" id="exportCsvBtn2">Export CSV</button>
+        <button class="secondary" id="exportExcelBtn2">Export Excel</button>
+        <button class="ghost" id="goDashboardBtn">Dashboard</button>
+        <button class="ghost" id="goReportBtn">Summary Table</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ids=['district','barangay','zone','latX','latY','interviewee','interviewDateTime','usedByFamily','usedByFamilyResidents','population','wellDepth','normalLevel','currentLevel','otherWaterSource','otherWaterSourceText','waterUse','remarks'];
+const STORAGE_KEY='shallow_well_records_full_v1';
+const SETTINGS_KEY='shallow_well_settings_full_v1';
+let currentPhotoData=''; let records=[]; let deferredPrompt=null;
+const RECORDS_PER_PAGE = 10;
+let currentRecordsPage = 1;
+let currentSavedSlideIndex = 0;
+const dashboardGraphState={rafId:null};
+const dashboardCounterState={};
+
+const barangaysByDistrict = {
+  "City Proper": ["Arsenal Aduana", "Baybay Tanza", "Bonifacio Tanza", "Concepcion-Montes", "Danao", "Delgado-Jalandoni-Bagumbayan", "Edganzon", "Flores", "General Hughes-Montes", "Gloria", "Hipodromo", "Inday", "Jalandoni-Wilson", "Kahirupan", "Kauswagan", "Legaspi dela Rama", "Liberation", "Mabolo-Delgado", "Magsaysay", "Malipayon-Delgado", "Maria Clara", "Monica Blumentritt", "Muelle Loney-Montes", "Nonoy", "Ortiz", "Osmeña", "President Roxas", "Rima-Rizal", "Rizal Estanzuela", "Rizal Ibarra", "Rizal Palapala I", "Rizal Palapala II", "Roxas Village", "Sampaguita", "San Agustin", "San Felix", "San Jose", "Santo Rosario-Duran", "Tanza-Esperanza", "Timawa Tanza I", "Timawa Tanza II", "Veterans Village", "Villa Anita", "Yulo-Arroyo", "Zamora-Melliza"],
+  "Arevalo": ["Bonifacio", "Calaparan", "Dulonan", "Mohon", "Quezon", "San Jose", "San Vicente", "Santa Filomina", "Santo Domingo", "Santo Niño Norte", "Santo Niño Sur", "So-oc", "Yulo Drive"],
+  "Mandurriao": ["Abeto Mirasol Taft South (Quirico Abeto)", "Airport (Tabucan Airport)", "Bakhaw", "Bolilao", "Buhang Taft North", "Calahunan", "Dungon C", "Guzman-Jesena", "Hibao-an Norte", "Hibao-an Sur", "Navais", "Oñate de Leon", "Pale Benedicto Rizal", "PHHC Block 17", "PHHC Block 22 NHA", "San Rafael", "Santa Rosa", "Tabucan"],
+  "LaPaz": ["Aguinaldo", "Baldoza", "Bantud", "Banuyao", "Burgos-Mabini-Plaza", "Caingin", "Divinagracia", "Gustilo", "Hinactacan", "Ingore", "Jereos", "Laguda", "Lopez Jaena Norte", "Lopez Jaena Sur", "Luna", "MacArthur", "Magdalo", "Magsaysay Village", "Nabitasan", "Railway", "Rizal", "San Isidro", "San Nicolas", "Tabuc Suba", "Ticud"],
+  "Jaro": ["Arguelles", "Balabago", "Balantang", "Benedicto", "Bito-on", "Buhang", "Buntatala", "Camalig", "Cuartero", "Cubay", "Democracia", "Desamparados", "Dungon A", "Dungon B", "Fajardo", "Javellana", "Lanit", "Libertad", "Lopez Jaena", "Luna", "M.H. del Pilar", "M.V. Hechanova", "Ma. Cristina", "Montinola", "Our Lady of Fatima", "Our Lady of Lourdes", "San Vicente", "Sambag", "San Isidro", "San Jose", "San Pedro", "San Roque", "Simon Ledesma", "Tabuc Suba", "Tacas", "Tagbac", "Taytay Zone II", "Ungka"],
+  "Lapuz": ["Alalasan", "Bo. Obrero", "Don Esteban", "Jalandoni Estate", "Lapuz Norte", "Lapuz Sur", "Libertad", "Loboc", "Mansaya", "Progreso", "Punong", "Sinikway"],
+  "Molo": ["Calumpang", "Cochero", "Compania", "East Baluarte", "East Timawa", "Habog-Habog Salvacion", "Infante", "Kasingkasing", "Katilingban", "Molo Boulevard", "North Avanceña", "North Baluarte", "North Fundidor", "North San Jose", "Poblacion", "San Antonio", "San Juan", "San Pedro", "South Baluarte", "South Fundidor", "South San Jose", "Taal", "Tap-oc", "West Habog-Habog", "West Timawa"]
+};
+
+document.getElementById('district').addEventListener('change', function() {
+    const brgySelect = document.getElementById('barangay');
+    brgySelect.innerHTML = '<option value="">Select Barangay</option>';
+    if (this.value && barangaysByDistrict[this.value]) {
+        barangaysByDistrict[this.value].forEach(brgy => {
+            const opt = document.createElement('option'); opt.value = brgy; opt.textContent = brgy; brgySelect.appendChild(opt);
+        });
+    }
+});
+
+ids.forEach(id => {
+  if (id === 'otherWaterSource') {
+    document.querySelectorAll('input[name="otherWaterSource"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.value === 'Others') document.getElementById('otherWaterSourceText').style.display = cb.checked ? 'block' : 'none';
+        calculate();
+      });
+    });
+    return;
+  }
+  const el = document.getElementById(id);
+  if(el){ el.addEventListener('input', calculate); el.addEventListener('change', calculate); }
+});
+
+function num(id){const v=parseFloat(document.getElementById(id).value); return Number.isFinite(v)?v:0;}
+function text(id){
+  if (id === 'otherWaterSource') {
+    const checked = document.querySelectorAll('input[name="otherWaterSource"]:checked');
+    return Array.from(checked).map(cb => (cb.value === 'Others' ? `Others (${document.getElementById('otherWaterSourceText').value.trim()})` : cb.value)).join(', ');
+  }
+  const el = document.getElementById(id); return el ? el.value || '' : '';
+}
+
+function calculate(){
+  const pop=num('population'), norm=num('normalLevel'), curr=num('currentLevel');
+  const vol=norm*200, need=pop*30, sup=curr*200, avail=sup-need;
+  const status=avail>=0?'Sufficient':'Insufficient', aff=status==='Insufficient'?pop:0;
+  document.getElementById('volumePerWell').textContent=vol.toLocaleString() + ' L';
+  document.getElementById('dailyNeed').textContent=need.toLocaleString() + ' L';
+  document.getElementById('currentSupply').textContent=sup.toLocaleString() + ' L';
+  document.getElementById('availableSupply').textContent=avail.toLocaleString() + ' L';
+  const s=document.getElementById('status'); s.textContent=status; s.className=status==='Sufficient'?'value status-good':'value status-bad';
+  document.getElementById('affected').textContent=aff.toLocaleString();
+  return {vol,need,sup,avail,status,aff};
+}
+
+function addRecord(){
+  const c=calculate();
+  records.push({
+    district:text('district'), barangay:text('barangay'), zone:text('zone'), latX:text('latX'), latY:text('latY'),
+    interviewee:text('interviewee'), interviewDateTime:text('interviewDateTime'),
+    usedByFamily:text('usedByFamily'), usedByFamilyResidents:text('usedByFamilyResidents'),
+    population:num('population'), wellDepth:num('wellDepth'), normalLevel:num('normalLevel'), currentLevel:num('currentLevel'),
+    otherWaterSource:text('otherWaterSource'), waterUse:text('waterUse'),
+    volumePerWell:c.vol, dailyNeed:c.need, currentSupply:c.sup, availableSupply:c.avail,
+    status:c.status, affected:c.aff, remarks:text('remarks'), photoName:text('photoName'), photoData:currentPhotoData
+  });
+  currentRecordsPage = Math.ceil(records.length / RECORDS_PER_PAGE) || 1;
+  currentSavedSlideIndex = Math.max(0, records.length - 1);
+  saveRecords(); syncRecords({silent:true}); clearForm(); alert('Record added. Saved offline on this device.'); showTab('dashboard');
+}
+
+function saveRecords(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); refreshViews(); }
+function loadRecords(){ try{const r=localStorage.getItem(STORAGE_KEY); if(r) records=JSON.parse(r);}catch(e){} refreshViews(); }
+function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify({syncUrl:text('syncUrl'), darkMode:document.body.classList.contains('dark-mode')})); updateSyncStatus(); }
+function loadSettings(){ try{const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); document.getElementById('syncUrl').value=s.syncUrl||''; applyTheme(!!s.darkMode);}catch(e){ applyTheme(false); } updateSyncStatus(); }
+function applyTheme(isDark){ document.body.classList.toggle('dark-mode', !!isDark); const btn=document.getElementById('themeToggleBtn'); if(btn){ btn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode'; } const meta=document.querySelector('meta[name="theme-color"]'); if(meta){ meta.setAttribute('content', isDark ? '#0f172a' : '#2563eb'); } }
+function toggleTheme(){ const isDark=!document.body.classList.contains('dark-mode'); applyTheme(isDark); saveSettings(); refreshDashboard(); }
+function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+function animateDashboardCounter(id, target, options={}){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const suffix=options.suffix || '';
+  const duration=options.duration || 900;
+  const endValue=Number(target) || 0;
+  const startValue=Number(el.dataset.counterValue || 0) || 0;
+  if(dashboardCounterState[id]) cancelAnimationFrame(dashboardCounterState[id]);
+  const start=performance.now();
+  function render(value){
+    const rounded=Math.round(value);
+    el.textContent=rounded.toLocaleString() + suffix;
+    el.dataset.counterValue=String(rounded);
+  }
+  if(startValue === endValue){ render(endValue); return; }
+  function step(now){
+    const progress=Math.min(1,(now-start)/duration);
+    const eased=easeOutCubic(progress);
+    const current=startValue + (endValue - startValue) * eased;
+    render(current);
+    if(progress < 1){
+      dashboardCounterState[id]=requestAnimationFrame(step);
+    }else{
+      render(endValue);
+      dashboardCounterState[id]=null;
+    }
+  }
+  dashboardCounterState[id]=requestAnimationFrame(step);
+}
+function updateConnectionStatus(){
+  const isOnline = navigator.onLine;
+  const pill = document.getElementById('connectionPill');
+  const statusText = document.getElementById('appStatusText');
+  if(pill){
+    pill.textContent = isOnline ? 'Online' : 'Offline';
+    pill.className = 'pill ' + (isOnline ? 'online' : 'offline');
+  }
+  if(statusText){
+    statusText.textContent = isOnline
+      ? 'Online mode active. Records still save locally first, then you can sync to Google Sheets.'
+      : 'Offline mode active. You can continue adding records; sync them when internet returns.';
+    statusText.className = 'notice printable' + (isOnline ? '' : ' warning');
+  }
+  updateSyncStatus();
+}
+
+function updateSyncStatus(){
+  const url=text('syncUrl');
+  const el=document.getElementById('syncStatus');
+  if(!el) return;
+  const lastSync=localStorage.getItem('shallow_well_last_sync');
+  const onlineText = navigator.onLine ? 'Online' : 'Offline';
+  if(url){
+    el.textContent = `Sync URL saved. Status: ${onlineText}. ${lastSync ? 'Last sync request: ' + new Date(lastSync).toLocaleString() + '.' : 'No sync request yet.'}`;
+    el.className='notice';
+  }else{
+    el.textContent=`No sync URL saved yet. Status: ${onlineText}.`;
+    el.className='notice warning';
+  }
+}
+
+function escapeHTML(value){
+  return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
+function renderTable(){
+  const tbody=document.querySelector('#recordsTable tbody');
+  const pagination=document.getElementById('recordsPagination');
+  const pageInfo=document.getElementById('recordsPageInfo');
+  const prevBtn=document.getElementById('prevRecordsPage');
+  const nextBtn=document.getElementById('nextRecordsPage');
+  tbody.innerHTML='';
+
+  const totalPages=Math.max(1, Math.ceil(records.length / RECORDS_PER_PAGE));
+  if(currentRecordsPage > totalPages) currentRecordsPage = totalPages;
+  if(currentRecordsPage < 1) currentRecordsPage = 1;
+
+  const start=(currentRecordsPage - 1) * RECORDS_PER_PAGE;
+  const pageRecords=records.slice(start, start + RECORDS_PER_PAGE);
+
+  if(!pageRecords.length){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td colspan="16" class="empty-cell" style="text-align:center;color:var(--muted);padding:16px">No saved records yet.</td>`;
+    tbody.appendChild(tr);
+  } else {
+    pageRecords.forEach((r,i)=>{
+      const realIndex=start+i;
+      const tr=document.createElement('tr');
+      const cells=[
+        ['District', r.district], ['Barangay', r.barangay], ['Zone', r.zone], ['Interviewee', r.interviewee],
+        ['Date/Time', r.interviewDateTime], ['Population', r.population], ['Normal Level', r.normalLevel], ['Current Level', r.currentLevel],
+        ['Other Water Sources', r.otherWaterSource], ['Sa diin gina usar ang tubig', r.waterUse],
+        ['Daily Need', r.dailyNeed], ['Current Supply', r.currentSupply], ['Available Supply', r.availableSupply], ['Status', r.status], ['Affected', r.affected]
+      ];
+      tr.innerHTML=cells.map(([label,value])=>`<td data-label="${escapeHTML(label)}">${escapeHTML(value)}</td>`).join('') +
+        `<td data-label="Action" class="no-print"><button type="button" class="danger row-delete-btn" onclick="deleteRecord(${realIndex})">Delete</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  if(pagination){ pagination.style.display = records.length > RECORDS_PER_PAGE ? 'flex' : 'none'; }
+  if(pageInfo){ pageInfo.textContent = `Page ${currentRecordsPage} of ${totalPages}`; }
+  if(prevBtn){ prevBtn.disabled = currentRecordsPage <= 1; }
+  if(nextBtn){ nextBtn.disabled = currentRecordsPage >= totalPages; }
+}
+
+function renderSavedRecordSlider(){
+  const slider=document.getElementById('savedRecordSlider');
+  const count=document.getElementById('savedRecordSliderCount');
+  const dots=document.getElementById('savedRecordSliderDots');
+  const prevBtn=document.getElementById('prevSavedSlideBtn');
+  const nextBtn=document.getElementById('nextSavedSlideBtn');
+  const deleteBtn=document.getElementById('deleteSavedSlideBtn');
+  if(!slider) return;
+
+  if(!records.length){
+    currentSavedSlideIndex = 0;
+    slider.innerHTML='<div class="record-slider-empty">No saved records yet.</div>';
+    if(count) count.textContent='Record 0 of 0';
+    if(dots) dots.innerHTML='';
+    if(prevBtn) prevBtn.disabled=true;
+    if(nextBtn) nextBtn.disabled=true;
+    if(deleteBtn) deleteBtn.disabled=true;
+    return;
+  }
+
+  if(currentSavedSlideIndex >= records.length) currentSavedSlideIndex = records.length - 1;
+  if(currentSavedSlideIndex < 0) currentSavedSlideIndex = 0;
+
+  const r=records[currentSavedSlideIndex];
+  const statusClass=r.status === 'Sufficient' ? 'sufficient' : 'insufficient';
+  const safeVal=(v, empty='—')=>{
+    const str=String(v ?? '').trim();
+    return str ? escapeHTML(str) : `<span class="record-slide-value muted">${empty}</span>`;
+  };
+  const infoRows=[
+    ['District', safeVal(r.district)],
+    ['Barangay', safeVal(r.barangay)],
+    ['Zone', safeVal(r.zone)],
+    ['Interviewee', safeVal(r.interviewee)],
+    ['Date/Time', safeVal(r.interviewDateTime)],
+    ['Other Water Sources', safeVal(r.otherWaterSource)],
+    ['Sa diin gina usar ang tubig', safeVal(r.waterUse)],
+    ['Normal Level', safeVal(r.normalLevel)],
+    ['Current Level', safeVal(r.currentLevel)],
+    ['Status', `<span class="record-slide-status ${statusClass}">${escapeHTML(r.status || '')}</span>`],
+    ['Remarks', safeVal(r.remarks, 'No remarks')]
+  ];
+
+  slider.innerHTML=`<div class="record-slide-card">
+    <div class="record-slide-summary">
+      <div class="record-slide-stat"><div class="stat-label">Population</div><div class="stat-value">${(+r.population || 0).toLocaleString()}</div></div>
+      <div class="record-slide-stat"><div class="stat-label">Daily Need</div><div class="stat-value">${(+r.dailyNeed || 0).toLocaleString()} L</div></div>
+      <div class="record-slide-stat"><div class="stat-label">Current Supply</div><div class="stat-value">${(+r.currentSupply || 0).toLocaleString()} L</div></div>
+      <div class="record-slide-stat"><div class="stat-label">Affected</div><div class="stat-value">${(+r.affected || 0).toLocaleString()}</div></div>
+    </div>
+    <div class="record-slide-main">
+      ${infoRows.map(([label,value])=>`<div class="record-slide-row"><div class="record-slide-label">${escapeHTML(label)}</div><div class="record-slide-value ${label === 'Remarks' ? 'full-width' : ''}">${value}</div></div>`).join('')}
+      <div class="record-slide-row">
+        <div class="record-slide-label">Available Supply</div>
+        <div class="record-slide-value">${(+r.availableSupply || 0).toLocaleString()} L</div>
+      </div>
+    </div>
+  </div>`;
+
+  if(count) count.textContent=`Record ${currentSavedSlideIndex + 1} of ${records.length}`;
+  if(prevBtn) prevBtn.disabled=currentSavedSlideIndex <= 0;
+  if(nextBtn) nextBtn.disabled=currentSavedSlideIndex >= records.length - 1;
+  if(deleteBtn) deleteBtn.disabled=false;
+
+  if(dots){
+    const maxDots=20;
+    if(records.length <= maxDots){
+      dots.innerHTML=records.map((_,i)=>`<span class="record-dot ${i===currentSavedSlideIndex?'active':''}" title="Record ${i+1}"></span>`).join('');
+    }else{
+      dots.innerHTML=`<span class="small">Use swipe or the Previous/Next buttons to browse ${records.length} saved records.</span>`;
+    }
+  }
+}
+
+function nextSavedSlide(){
+  if(currentSavedSlideIndex < records.length - 1){
+    currentSavedSlideIndex++;
+    renderSavedRecordSlider();
+  }
+}
+
+function prevSavedSlide(){
+  if(currentSavedSlideIndex > 0){
+    currentSavedSlideIndex--;
+    renderSavedRecordSlider();
+  }
+}
+
+function deleteCurrentSavedSlide(){
+  if(!records.length) return;
+  deleteRecord(currentSavedSlideIndex);
+}
+
+function deleteRecord(index){
+  if(index < 0 || index >= records.length) return;
+  if(confirm('Delete this saved record?')){
+    records.splice(index, 1);
+    if(currentSavedSlideIndex >= records.length) currentSavedSlideIndex = Math.max(0, records.length - 1);
+    saveRecords();
+  }
+}
+
+function nextRecordsPage(){
+  const totalPages=Math.max(1, Math.ceil(records.length / RECORDS_PER_PAGE));
+  if(currentRecordsPage < totalPages){ currentRecordsPage++; renderTable(); }
+}
+
+function prevRecordsPage(){
+  if(currentRecordsPage > 1){ currentRecordsPage--; renderTable(); }
+}
+
+function getActiveChartFilters(){
+  const districtEl=document.getElementById('chartDistrictFilter');
+  const barangayEl=document.getElementById('chartBarangayFilter');
+  return {
+    district: districtEl ? districtEl.value : '',
+    barangay: barangayEl ? barangayEl.value : ''
+  };
+}
+
+function getFilteredChartRecords(){
+  const filters=getActiveChartFilters();
+  let data=[...records];
+  if(filters.district) data=data.filter(r=>String(r.district||'')===filters.district);
+  if(filters.barangay) data=data.filter(r=>String(r.barangay||'')===filters.barangay);
+  return data;
+}
+
+function getChartFilterLabel(filters=getActiveChartFilters()){
+  const parts=[];
+  if(filters.district) parts.push(`District: ${filters.district}`);
+  if(filters.barangay) parts.push(`Barangay: ${filters.barangay}`);
+  return parts.length ? parts.join(' | ') : 'Showing all records';
+}
+
+function populateChartFilterOptions(){
+  const districtEl=document.getElementById('chartDistrictFilter');
+  const barangayEl=document.getElementById('chartBarangayFilter');
+  if(!districtEl || !barangayEl) return;
+
+  const currentDistrict=districtEl.value;
+  const currentBarangay=barangayEl.value;
+  const districts=[...new Set(records.map(r=>String(r.district || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  districtEl.innerHTML='<option value="">All Districts</option>' + districts.map(d=>`<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
+  districtEl.value=districts.includes(currentDistrict) ? currentDistrict : '';
+
+  const scopedRecords=districtEl.value ? records.filter(r=>String(r.district || '').trim()===districtEl.value) : records;
+  const barangays=[...new Set(scopedRecords.map(r=>String(r.barangay || '').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  barangayEl.innerHTML='<option value="">All Barangays</option>' + barangays.map(b=>`<option value="${escapeHTML(b)}">${escapeHTML(b)}</option>`).join('');
+  barangayEl.value=barangays.includes(currentBarangay) ? currentBarangay : '';
+
+  const filterStatus=document.getElementById('chartFilterStatus');
+  if(filterStatus) filterStatus.textContent=getChartFilterLabel();
+}
+
+function summarizeBy(field, data=records){
+  const groups=new Map();
+  data.forEach(r=>{
+    const raw=(r[field] ?? '').toString().trim();
+    const key=raw || 'Unspecified';
+    if(!groups.has(key)) groups.set(key,{name:key, records:0, population:0, affected:0, sufficient:0, insufficient:0});
+    const item=groups.get(key);
+    item.records += 1;
+    item.population += (+r.population || 0);
+    item.affected += (+r.affected || 0);
+    if(r.status === 'Sufficient') item.sufficient += 1;
+    else item.insufficient += 1;
+  });
+  return Array.from(groups.values()).sort((a,b)=>{
+    if(b.records !== a.records) return b.records - a.records;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function getStatusCounts(data=records){
+  const sufficient=data.filter(r=>r.status==='Sufficient').length;
+  const insufficient=data.filter(r=>r.status==='Insufficient').length;
+  return {sufficient, insufficient, total:sufficient + insufficient};
+}
+
+function buildLegendHTML(){
+  return `<div class="presentable-legend">
+      <span class="legend-chip"><span class="dot sufficient"></span>Sufficient</span>
+      <span class="legend-chip"><span class="dot insufficient"></span>Insufficient</span>
+    </div>`;
+}
+
+function buildOverallStatusHTML(data=records){
+  const {sufficient, insufficient, total}=getStatusCounts(data);
+  if(!total) return '<div class="chart-empty">No records yet. Add records to generate the chart.</div>';
+  const suffPct=(sufficient/total)*100;
+  const insuffPct=(insufficient/total)*100;
+  const donutBg=`conic-gradient(#16a34a 0 ${suffPct}%, #dc2626 ${suffPct}% 100%)`;
+  return `${buildLegendHTML()}
+    <div class="overall-graphic">
+      <div class="overall-graphic-left">
+        <div class="overall-donut-wrap">
+          <div class="overall-donut animated-donut" style="background:${donutBg}"></div>
+          <div class="overall-donut-center">
+            <div class="overall-total-label">Total Records</div>
+            <div class="overall-total-value">${total}</div>
+            <div class="overall-total-sub">Overall Water Sufficiency</div>
+          </div>
+        </div>
+      </div>
+      <div class="overall-graphic-right">
+        <div class="overall-stat-card sufficient">
+          <div class="info">
+            <div class="label">Sufficient</div>
+            <div class="count">${sufficient}</div>
+          </div>
+          <div class="pct">${suffPct.toFixed(1)}%</div>
+        </div>
+        <div class="overall-stat-card insufficient">
+          <div class="info">
+            <div class="label">Insufficient</div>
+            <div class="count">${insufficient}</div>
+          </div>
+          <div class="pct">${insuffPct.toFixed(1)}%</div>
+        </div>
+        <div class="overall-progress">
+          <div class="overall-progress-labels">
+            <span>Sufficient Share</span>
+            <span>Insufficient Share</span>
+          </div>
+          <div class="overall-bar animated-bar" aria-label="Overall water sufficiency distribution">
+            <div class="seg sufficient" style="width:${suffPct}%"></div>
+            <div class="seg insufficient" style="width:${insuffPct}%"></div>
+          </div>
+          <div class="overall-summary-note">This graphic shows the percentage and count of saved records with sufficient and insufficient water supply.</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildPieChartHTML(data=records){
+  const {sufficient, insufficient, total}=getStatusCounts(data);
+  if(!total) return '<div class="chart-empty">No records yet. Add records to generate the chart.</div>';
+  const suffPct=(sufficient/total)*100;
+  const insuffPct=(insufficient/total)*100;
+  const bg=`conic-gradient(#16a34a 0 ${suffPct}%, #dc2626 ${suffPct}% 100%)`;
+  return `${buildLegendHTML()}
+    <div class="pretty-pie-layout">
+      <div class="pretty-pie-visual">
+        <div class="pretty-pie-ring-wrap">
+          <div class="pretty-pie-ring animated-pie" style="background:${bg}"></div>
+          <div class="pretty-pie-center">
+            <div class="top">Total Records</div>
+            <div class="big">${total}</div>
+            <div class="sub">Visual distribution of records</div>
+          </div>
+        </div>
+      </div>
+      <div class="pretty-pie-stats">
+        <div class="pretty-stat-card sufficient">
+          <div class="label">Sufficient</div>
+          <div class="row"><div class="count">${sufficient}</div><div class="pct">${suffPct.toFixed(1)}%</div></div>
+        </div>
+        <div class="pretty-stat-card insufficient">
+          <div class="label">Insufficient</div>
+          <div class="row"><div class="count">${insufficient}</div><div class="pct">${insuffPct.toFixed(1)}%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-summary-note">This pie chart presents the visual distribution of sufficient and insufficient water sufficiency records based on the current dashboard filter.</div>`;
+}
+
+function buildGroupedStatsHTML(field, data=records){
+  const stats=summarizeBy(field, data);
+  if(!stats.length) return '<div class="chart-empty">No records yet. Add records to generate the chart.</div>';
+  const maxTotal=Math.max(...stats.map(s=>s.records), 1);
+  const label=field === 'district' ? 'district' : 'barangay';
+  return `${buildLegendHTML()}
+    <div class="grouped-pretty-list">
+      ${stats.map(s=>{
+        const suffWidth=(s.sufficient/maxTotal)*100;
+        const insuffWidth=(s.insufficient/maxTotal)*100;
+        const suffPct=s.records ? ((s.sufficient/s.records)*100).toFixed(1) : '0.0';
+        const insuffPct=s.records ? ((s.insufficient/s.records)*100).toFixed(1) : '0.0';
+        return `<div class="grouped-pretty-card">
+          <div class="grouped-pretty-head">
+            <div class="grouped-pretty-title">${escapeHTML(s.name)}</div>
+            <div class="grouped-pretty-total">Total: ${s.records}</div>
+          </div>
+          <div class="grouped-pretty-pills">
+            <span class="grouped-pretty-pill"><span class="mini sufficient"></span>Sufficient: ${s.sufficient}</span>
+            <span class="grouped-pretty-pill"><span class="mini insufficient"></span>Insufficient: ${s.insufficient}</span>
+          </div>
+          <div class="grouped-pretty-track">
+            <div class="seg sufficient" style="width:${suffWidth}%"></div>
+            <div class="seg insufficient" style="width:${insuffWidth}%"></div>
+          </div>
+          <div class="grouped-pretty-foot">
+            <span>${suffPct}% sufficient</span>
+            <span>${insuffPct}% insufficient</span>
+            <span>Per ${label} statistics</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="chart-summary-note">Scale is based on the highest total records in the list. The chart compares sufficient and insufficient records for each ${label}.</div>`;
+}
+
+function renderDistrictSummaryTable(data=records){
+  const tbody=document.querySelector('#districtSummaryTable tbody');
+  if(!tbody) return;
+  const stats=summarizeBy('district', data);
+  if(!stats.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No records yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=stats.map(s=>`<tr><td>${escapeHTML(s.name)}</td><td>${s.records}</td><td>${s.population.toLocaleString()}</td><td>${s.affected.toLocaleString()}</td><td>${s.sufficient}</td><td>${s.insufficient}</td></tr>`).join('');
+}
+
+function renderOverallStatusChart(data=records){
+  const el=document.getElementById('overallStatusChart');
+  if(el) el.innerHTML=buildOverallStatusHTML(data);
+}
+
+function renderPieChart(data=records){
+  const el=document.getElementById('statusPieChart');
+  if(el) el.innerHTML=buildPieChartHTML(data);
+}
+
+function drawBarangayStatsCanvas(data=records){
+  const canvas=document.getElementById('barangayStatsCanvas');
+  if(!canvas) return;
+  const wrap=canvas.parentElement;
+  const dpr=window.devicePixelRatio || 1;
+  const cssWidth=Math.max(300, wrap.clientWidth || 800);
+  const cssHeight=Math.max(300, wrap.clientHeight || 380);
+  canvas.width=Math.floor(cssWidth * dpr);
+  canvas.height=Math.floor(cssHeight * dpr);
+  canvas.style.width=cssWidth + 'px';
+  canvas.style.height=cssHeight + 'px';
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssWidth,cssHeight);
+
+  const darkMode=document.body.classList.contains('dark-mode');
+  const bg=ctx.createLinearGradient(0,0,cssWidth,cssHeight);
+  if(darkMode){
+    bg.addColorStop(0,'#0f172a');
+    bg.addColorStop(1,'#111827');
+  }else{
+    bg.addColorStop(0,'#ffffff');
+    bg.addColorStop(1,'#f8fbff');
+  }
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,cssWidth,cssHeight);
+
+  const stats=summarizeBy('barangay', data).slice(0, 12);
+  if(!stats.length){
+    ctx.fillStyle=darkMode ? '#cbd5e1' : '#6b7280';
+    ctx.font='700 16px Arial';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('No barangay data yet.', cssWidth/2, cssHeight/2);
+    return;
+  }
+
+  const padLeft=70, padRight=20, padTop=40, padBottom=40;
+  const chartW=cssWidth - padLeft - padRight;
+  const chartH=cssHeight - padTop - padBottom;
+  const rowGap=10;
+  const rowH=Math.max(16, Math.min(26, (chartH - rowGap*(stats.length-1))/stats.length));
+  const maxTotal=Math.max(...stats.map(s=>s.records), 1);
+
+  ctx.fillStyle=darkMode ? '#c7d2fe' : '#312e81';
+  ctx.font='900 16px Arial';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  ctx.fillText('Barangay Water Sufficiency Chart', padLeft, 10);
+
+  ctx.fillStyle=darkMode ? '#94a3b8' : '#475569';
+  ctx.font='700 12px Arial';
+  ctx.fillText('Top barangays by current filtered data', padLeft, 28);
+
+  stats.forEach((s, i)=>{
+    const y=padTop + i*(rowH + rowGap);
+    const totalW=(s.records/maxTotal)*chartW;
+    const suffW=(s.sufficient/maxTotal)*chartW;
+    const insuffW=(s.insufficient/maxTotal)*chartW;
+    const palette=getDistrictPalette(s.name, i);
+
+    // Label
+    ctx.fillStyle=darkMode ? '#e2e8f0' : '#334155';
+    ctx.font='700 11px Arial';
+    ctx.textAlign='right';
+    ctx.textBaseline='middle';
+    const label=s.name.length > 14 ? s.name.slice(0,12) + '…' : s.name;
+    ctx.fillText(label, padLeft - 8, y + rowH/2);
+
+    // Track
+    ctx.fillStyle=darkMode ? '#1f2937' : '#e5e7eb';
+    ctx.fillRect(padLeft, y, chartW, rowH);
+
+    // Sufficient
+    const grad1=ctx.createLinearGradient(padLeft,y,padLeft+suffW,y);
+    grad1.addColorStop(0, palette.primary);
+    grad1.addColorStop(1, palette.primary);
+    ctx.fillStyle=grad1;
+    ctx.fillRect(padLeft, y, suffW, rowH);
+
+    // Insufficient stacked part
+    const grad2=ctx.createLinearGradient(padLeft+suffW,y,padLeft+suffW+insuffW,y);
+    grad2.addColorStop(0, palette.secondary);
+    grad2.addColorStop(1, palette.secondary);
+    ctx.fillStyle=grad2;
+    ctx.fillRect(padLeft+suffW, y, insuffW, rowH);
+
+    // Border
+    ctx.strokeStyle=darkMode ? '#334155' : '#cbd5e1';
+    ctx.strokeRect(padLeft, y, Math.max(totalW, 0), rowH);
+
+    // Values
+    ctx.textAlign='left';
+    ctx.fillStyle=darkMode ? '#e2e8f0' : '#0f172a';
+    ctx.fillText(`S:${s.sufficient}  I:${s.insufficient}  T:${s.records}`, padLeft + Math.min(totalW + 8, chartW - 70), y + rowH/2);
+  });
+
+  // Legend
+  const legendY = cssHeight - 16;
+  ctx.textAlign='left';
+  ctx.textBaseline='middle';
+  ctx.font='700 12px Arial';
+  ctx.fillStyle=darkMode ? '#cbd5e1' : '#334155';
+  ctx.fillText('Lighter segment = Sufficient    Darker segment = Insufficient', padLeft, legendY);
+}
+
+function renderGroupedStatsChart(containerId, field, data=records){
+  const el=document.getElementById(containerId);
+  if(el) el.innerHTML=buildGroupedStatsHTML(field, data);
+  if(field==='barangay') drawBarangayStatsCanvas(data);
+}
+
+function buildReportChartsHTML(data=records){
+  return `
+    <h3 class="report-chart-title">Charts and Statistics</h3>
+    <div class="notice report-filter-note">${escapeHTML(getChartFilterLabel())}</div>
+    <div class="chart-section">
+      <div class="chart-box">
+        <h3>Overall Water Sufficiency Chart</h3>
+        <div class="small">Summary of sufficient and insufficient records.</div>
+        ${buildOverallStatusHTML(data)}
+      </div>
+      <div class="chart-box">
+        <h3>Water Sufficiency Pie Chart</h3>
+        <div class="small">Visual distribution of sufficient and insufficient records.</div>
+        ${buildPieChartHTML(data)}
+      </div>
+      <div class="chart-box">
+        <h3>District Water Sufficiency Statistics</h3>
+        <div class="small">Per district statistics.</div>
+        ${buildGroupedStatsHTML('district', data)}
+      </div>
+      <div class="chart-box">
+        <h3>Barangay Water Sufficiency Statistics</h3>
+        <div class="small">Per barangay statistics.</div>
+        ${buildGroupedStatsHTML('barangay', data)}
+      </div>
+    </div>
+  `;
+}
+
+function buildExcelBarHTML(sufficient, insufficient, maxTotal){
+  const suffWidth=maxTotal ? (sufficient/maxTotal)*100 : 0;
+  const insuffWidth=maxTotal ? (insufficient/maxTotal)*100 : 0;
+  return `<table class="excel-mini-bar" cellspacing="0" cellpadding="0"><tr><td style="width:${suffWidth}%;background:#15803d"></td><td style="width:${insuffWidth}%;background:#b91c1c"></td></tr></table>`;
+}
+
+function exportChartExcel(){
+  const data=getFilteredChartRecords();
+  if(!data.length) return alert('No chart data to export.');
+  const filtersLabel=getChartFilterLabel();
+  const overall=getStatusCounts(data);
+  const districtStats=summarizeBy('district', data);
+  const barangayStats=summarizeBy('barangay', data);
+  const maxDistrict=Math.max(...districtStats.map(s=>s.records), 1);
+  const maxBarangay=Math.max(...barangayStats.map(s=>s.records), 1);
+  const districtRows=districtStats.map(s=>`<tr><td>${excelCell(s.name)}</td><td>${s.records}</td><td>${s.sufficient}</td><td>${s.insufficient}</td><td>${s.population}</td><td>${s.affected}</td><td>${buildExcelBarHTML(s.sufficient, s.insufficient, maxDistrict)}</td></tr>`).join('');
+  const barangayRows=barangayStats.map(s=>`<tr><td>${excelCell(s.name)}</td><td>${s.records}</td><td>${s.sufficient}</td><td>${s.insufficient}</td><td>${s.population}</td><td>${s.affected}</td><td>${buildExcelBarHTML(s.sufficient, s.insufficient, maxBarangay)}</td></tr>`).join('');
+  const suffPct=overall.total ? ((overall.sufficient/overall.total)*100).toFixed(1) : '0.0';
+  const insuffPct=overall.total ? ((overall.insufficient/overall.total)*100).toFixed(1) : '0.0';
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,Helvetica,sans-serif;} table{border-collapse:collapse;margin-bottom:16px;} th,td{border:1px solid #777;padding:6px;vertical-align:middle;} th{background:#dbeafe;font-weight:bold;} .title{font-size:18px;font-weight:bold;background:#bfdbfe;} .label{font-weight:bold;background:#eef2ff;}
+  </style></head><body>
+  <table>
+    <tr><td class="title" colspan="6">Shallow Well Survey Chart Statistics</td></tr>
+    <tr><td class="label">Filters</td><td colspan="5">${excelCell(filtersLabel)}</td></tr>
+    <tr><td class="label">Total Records</td><td>${overall.total}</td><td class="label">Sufficient</td><td>${overall.sufficient} (${suffPct}%)</td><td class="label">Insufficient</td><td>${overall.insufficient} (${insuffPct}%)</td></tr>
+  </table>
+  <table>
+    <thead><tr><th colspan="7">District Statistics</th></tr><tr><th>District</th><th>Total</th><th>Sufficient</th><th>Insufficient</th><th>Population</th><th>Affected</th><th>Graphic Bar</th></tr></thead>
+    <tbody>${districtRows}</tbody>
+  </table>
+  <table>
+    <thead><tr><th colspan="7">Barangay Statistics</th></tr><tr><th>Barangay</th><th>Total</th><th>Sufficient</th><th>Insufficient</th><th>Population</th><th>Affected</th><th>Graphic Bar</th></tr></thead>
+    <tbody>${barangayRows}</tbody>
+  </table>
+  </body></html>`;
+  const dateCode=new Date().toISOString().slice(0,10);
+  downloadBlob(new Blob(['﻿' + html],{type:'application/vnd.ms-excel;charset=utf-8;'}), `shallow-well-chart-statistics-${dateCode}.xls`);
+}
+
+function exportChartPDF(){
+  const data=getFilteredChartRecords();
+  if(!data.length) return alert('No chart data to export.');
+  const popup=window.open('', '_blank', 'width=1100,height=900');
+  if(!popup) return alert('Popup blocked. Please allow popups to export PDF.');
+  const styles=`<style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#1f2937;padding:20px}
+    h1,h2,h3{margin:0 0 8px 0} .small{color:#6b7280;font-size:12px;line-height:1.5}
+    .notice{padding:10px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:13px;margin-bottom:12px}
+    .chart-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+    .chart-box{border:1px solid #d1d5db;border-radius:14px;padding:14px;background:#fff;break-inside:avoid}
+    .chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px}.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;font-weight:700}
+    .legend-swatch{width:12px;height:12px;border-radius:3px;display:inline-block}.swatch-sufficient{background:#15803d}.swatch-insufficient{background:#b91c1c}
+    .overall-graphic{display:grid;grid-template-columns:.95fr 1.05fr;gap:14px;align-items:center}.overall-graphic-left{display:flex;align-items:center;justify-content:center}.overall-donut-wrap{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}.overall-donut{width:100%;height:100%;border-radius:50%;position:relative;box-shadow:inset 0 0 0 12px #fff,0 8px 24px rgba(15,23,42,.08)}.overall-donut::after{content:'';position:absolute;inset:22%;background:#fff;border-radius:50%;box-shadow:0 2px 12px rgba(15,23,42,.08)}.overall-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1;padding:18px}.overall-total-label{font-size:12px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}.overall-total-value{font-size:34px;font-weight:900;color:#1f2937;line-height:1.05}.overall-total-sub{font-size:12px;color:#6b7280;margin-top:4px}.overall-graphic-right{display:grid;grid-template-columns:1fr;gap:10px}.overall-stat-card{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #d1d5db;border-radius:14px;background:#fff;padding:12px 14px;box-shadow:0 4px 14px rgba(15,23,42,.04)}.overall-stat-card .info{display:flex;flex-direction:column;gap:3px}.overall-stat-card .label{font-size:12px;color:#6b7280;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.overall-stat-card .count{font-size:22px;font-weight:900;line-height:1.05}.overall-stat-card .pct{font-size:13px;font-weight:800}.overall-stat-card.sufficient{border-color:#bbf7d0;background:#f0fdf4}.overall-stat-card.sufficient .count,.overall-stat-card.sufficient .pct{color:#166534}.overall-stat-card.insufficient{border-color:#fecaca;background:#fef2f2}.overall-stat-card.insufficient .count,.overall-stat-card.insufficient .pct{color:#991b1b}.overall-progress-labels{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6b7280;font-weight:700;margin-bottom:6px}.overall-bar{display:flex;width:100%;height:22px;border-radius:999px;overflow:hidden;background:#e5e7eb;border:1px solid #d1d5db;box-shadow:inset 0 1px 3px rgba(15,23,42,.06)}.overall-bar .seg{height:100%}.overall-bar .seg.sufficient{background:linear-gradient(90deg,#22c55e 0%,#15803d 100%)}.overall-bar .seg.insufficient{background:linear-gradient(90deg,#ef4444 0%,#b91c1c 100%)}.overall-summary-note{font-size:12.5px;color:#6b7280;line-height:1.45;margin-top:6px}.pie-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.pie-stat{border:1px solid #d1d5db;border-radius:12px;padding:10px;background:#f8fafc;text-align:center}.label{font-size:12px;color:#6b7280;margin-bottom:4px}.num{font-size:22px;font-weight:700}
+    .pie-chart-wrap{display:grid;grid-template-columns:.8fr 1.2fr;gap:14px;align-items:center}.pie-chart-visual{width:220px;height:220px;border-radius:50%;margin:0 auto;border:10px solid #fff;box-shadow:0 8px 22px rgba(15,23,42,.08)}
+    .bar-chart{display:flex;flex-direction:column;gap:10px}.chart-row{display:grid;gap:6px}.chart-row-top{display:flex;justify-content:space-between;gap:10px}.chart-label{font-size:13px;font-weight:700}.chart-values{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#6b7280}.chart-bar-track{display:flex;width:100%;height:18px;background:#eef2f7;border-radius:999px;overflow:hidden;border:1px solid #e5e7eb}.chart-segment{height:100%}.seg-sufficient{background:#15803d}.seg-insufficient{background:#b91c1c}
+    @media print{body{padding:0}.chart-section{grid-template-columns:1fr 1fr}}
+  </style>`;
+  popup.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Chart Statistics PDF</title>${styles}</head><body><h1>Shallow Well Survey Chart Statistics</h1><div class="notice">${escapeHTML(getChartFilterLabel())}</div>${buildReportChartsHTML(data)}<script>window.onload=function(){setTimeout(function(){window.print();},300);};<\/script></body></html>`);
+  popup.document.close();
+}
+
+
+function getDistrictPalette(name, index){
+  const palettes=[
+    ['#6366f1','#4338ca'], ['#06b6d4','#0f766e'], ['#f97316','#c2410c'], ['#22c55e','#15803d'], ['#ec4899','#be185d'],
+    ['#8b5cf6','#6d28d9'], ['#eab308','#a16207'], ['#3b82f6','#1d4ed8'], ['#14b8a6','#0f766e'], ['#ef4444','#b91c1c']
+  ];
+  const p = palettes[index % palettes.length];
+  return {primary:p[0], secondary:p[1]};
+}
+
+function drawDashboardMainGraph(data=records, options={}){
+  const canvas=document.getElementById('dashboardMainGraph');
+  if(!canvas) return;
+  const wrap=canvas.parentElement;
+  const dpr=window.devicePixelRatio || 1;
+  const cssWidth=Math.max(300, wrap.clientWidth || 800);
+  const cssHeight=Math.max(300, wrap.clientHeight || 360);
+  canvas.width=Math.floor(cssWidth * dpr);
+  canvas.height=Math.floor(cssHeight * dpr);
+  canvas.style.width=cssWidth + 'px';
+  canvas.style.height=cssHeight + 'px';
+
+  const ctx=canvas.getContext('2d');
+  const stats=summarizeBy('district', data).slice(0, 10);
+  const totalRecords=data.length;
+  const sufficientTotal=data.filter(r=>r.status==='Sufficient').length;
+  const insufficientTotal=data.filter(r=>r.status==='Insufficient').length;
+  const key=JSON.stringify(stats.map(s=>[s.name,s.sufficient,s.insufficient]));
+  const animate = options.animate !== false;
+  if(dashboardGraphState.rafId){
+    cancelAnimationFrame(dashboardGraphState.rafId);
+    dashboardGraphState.rafId=null;
+  }
+
+  function roundedRectPath(x,y,w,h,r){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.lineTo(x+w-rr,y);
+    ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+    ctx.lineTo(x+w,y+h-rr);
+    ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+    ctx.lineTo(x+rr,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+    ctx.lineTo(x,y+rr);
+    ctx.quadraticCurveTo(x,y,x+rr,y);
+    ctx.closePath();
+  }
+
+  function shadeColor(hex, percent){
+    const num=parseInt(hex.slice(1),16);
+    let r=(num>>16), g=(num>>8)&0x00FF, b=num&0x0000FF;
+    r=Math.min(255,Math.max(0,Math.round(r*(100+percent)/100)));
+    g=Math.min(255,Math.max(0,Math.round(g*(100+percent)/100)));
+    b=Math.min(255,Math.max(0,Math.round(b*(100+percent)/100)));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function draw3DBar(x, y, w, h, baseColor){
+    if(h<=0) return;
+    const depth=Math.max(6, Math.min(10, w*0.35));
+    const frontColor=baseColor;
+    const sideColor=shadeColor(baseColor,-18);
+    const topColor=shadeColor(baseColor,18);
+    const radius=Math.min(8,w/2,h/2);
+
+    ctx.save();
+    ctx.shadowColor='rgba(15,23,42,.12)';
+    ctx.shadowBlur=10;
+    ctx.shadowOffsetY=6;
+    ctx.fillStyle=frontColor;
+    roundedRectPath(x,y,w,h,radius);
+    ctx.fill();
+    ctx.restore();
+
+    // right side face
+    ctx.beginPath();
+    ctx.moveTo(x+w, y);
+    ctx.lineTo(x+w+depth, y-depth*0.65);
+    ctx.lineTo(x+w+depth, y+h-depth*0.65);
+    ctx.lineTo(x+w, y+h);
+    ctx.closePath();
+    ctx.fillStyle=sideColor;
+    ctx.fill();
+
+    // top face
+    ctx.beginPath();
+    ctx.moveTo(x+radius*0.55, y);
+    ctx.lineTo(x+w, y);
+    ctx.lineTo(x+w+depth, y-depth*0.65);
+    ctx.lineTo(x+depth+radius*0.55, y-depth*0.65);
+    ctx.lineTo(x, y);
+    ctx.closePath();
+    ctx.fillStyle=topColor;
+    ctx.fill();
+
+    // glossy highlight
+    const gloss=ctx.createLinearGradient(x,y,x,y+h);
+    gloss.addColorStop(0,'rgba(255,255,255,.35)');
+    gloss.addColorStop(.35,'rgba(255,255,255,.08)');
+    gloss.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=gloss;
+    roundedRectPath(x+1.5,y+1.5,Math.max(0,w*0.45),Math.max(0,h-3),Math.max(2,radius-2));
+    ctx.fill();
+  }
+
+  function render(progress=1){
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssWidth,cssHeight);
+
+    const darkMode=document.body.classList.contains('dark-mode');
+    const bg=ctx.createLinearGradient(0,0,cssWidth,cssHeight);
+    if(darkMode){
+      bg.addColorStop(0,'#0f172a');
+      bg.addColorStop(.45,'#111827');
+      bg.addColorStop(1,'#1e1b4b');
+    }else{
+      bg.addColorStop(0,'#ffffff');
+      bg.addColorStop(.45,'#eff6ff');
+      bg.addColorStop(1,'#f5f3ff');
+    }
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,cssWidth,cssHeight);
+
+    // decorative soft circles
+    const deco1=ctx.createRadialGradient(cssWidth*0.1, cssHeight*0.1, 10, cssWidth*0.1, cssHeight*0.1, 120);
+    deco1.addColorStop(0,darkMode ? 'rgba(59,130,246,.18)' : 'rgba(59,130,246,.14)');
+    deco1.addColorStop(1,'rgba(59,130,246,0)');
+    ctx.fillStyle=deco1; ctx.beginPath(); ctx.arc(cssWidth*0.1, cssHeight*0.1, 120, 0, Math.PI*2); ctx.fill();
+    const deco2=ctx.createRadialGradient(cssWidth*0.9, cssHeight*0.15, 10, cssWidth*0.9, cssHeight*0.15, 140);
+    deco2.addColorStop(0,darkMode ? 'rgba(236,72,153,.18)' : 'rgba(236,72,153,.12)');
+    deco2.addColorStop(1,'rgba(236,72,153,0)');
+    ctx.fillStyle=deco2; ctx.beginPath(); ctx.arc(cssWidth*0.9, cssHeight*0.15, 140, 0, Math.PI*2); ctx.fill();
+
+    if(!stats.length){
+      ctx.fillStyle=darkMode ? '#cbd5e1' : '#6b7280';
+      ctx.font='700 16px Arial';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText('No records yet. Add records to generate the dashboard graph.', cssWidth/2, cssHeight/2);
+      return;
+    }
+
+    const padLeft=58, padRight=30, padTop=44, padBottom=96;
+    const chartW=cssWidth-padLeft-padRight;
+    const chartH=cssHeight-padTop-padBottom;
+    const maxVal=Math.max(...stats.map(s=>Math.max(s.sufficient, s.insufficient, s.records)),1);
+    const roundedMax=Math.max(1, Math.ceil(maxVal / 2) * 2);
+
+    // header text
+    ctx.fillStyle=darkMode ? '#c7d2fe' : '#312e81';
+    ctx.font='900 16px Arial';
+    ctx.textAlign='left';
+    ctx.textBaseline='top';
+    ctx.fillText('Animated 3D District Water Sufficiency Graph', padLeft, 10);
+    ctx.fillStyle=darkMode ? '#94a3b8' : '#475569';
+    ctx.font='700 12px Arial';
+    ctx.fillText(`Records: ${totalRecords}   Sufficient: ${sufficientTotal}   Insufficient: ${insufficientTotal}`, padLeft, 28);
+
+    // Grid lines and labels
+    ctx.strokeStyle=darkMode ? 'rgba(148,163,184,.22)' : 'rgba(148,163,184,.32)';
+    ctx.lineWidth=1;
+    ctx.fillStyle=darkMode ? '#94a3b8' : '#64748b';
+    ctx.font='12px Arial';
+    ctx.textAlign='right';
+    ctx.textBaseline='middle';
+    const gridLines=4;
+    for(let i=0;i<=gridLines;i++){
+      const val=Math.round((roundedMax/gridLines)*i);
+      const y=padTop+chartH-(val/roundedMax)*chartH;
+      ctx.beginPath();
+      ctx.moveTo(padLeft,y);
+      ctx.lineTo(cssWidth-padRight,y);
+      ctx.stroke();
+      ctx.fillText(String(val), padLeft-8, y);
+    }
+
+    // Axis with subtle 3D floor
+    ctx.strokeStyle=darkMode ? '#64748b' : '#94a3b8';
+    ctx.beginPath();
+    ctx.moveTo(padLeft,padTop);
+    ctx.lineTo(padLeft,padTop+chartH);
+    ctx.lineTo(cssWidth-padRight,padTop+chartH);
+    ctx.stroke();
+    ctx.fillStyle=darkMode ? 'rgba(99,102,241,.10)' : 'rgba(99,102,241,.06)';
+    ctx.beginPath();
+    ctx.moveTo(padLeft,padTop+chartH);
+    ctx.lineTo(cssWidth-padRight,padTop+chartH);
+    ctx.lineTo(cssWidth-padRight+10,padTop+chartH-8);
+    ctx.lineTo(padLeft+10,padTop+chartH-8);
+    ctx.closePath();
+    ctx.fill();
+
+    const groupW=chartW/stats.length;
+    const barGap=Math.min(12, groupW*0.12);
+    const barW=Math.max(10, Math.min(26, (groupW - barGap*3)/2));
+
+    stats.forEach((s,i)=>{
+      const palette=getDistrictPalette(s.name, i);
+      const baseX=padLeft + i*groupW + groupW/2;
+      const baseY=padTop+chartH;
+      const suffH=((s.sufficient/roundedMax)*chartH)*progress;
+      const insuffH=((s.insufficient/roundedMax)*chartH)*progress;
+      const x1=baseX-barW-barGap/2;
+      const x2=baseX+barGap/2;
+
+      draw3DBar(x1, baseY-suffH, barW, suffH, palette.primary);
+      draw3DBar(x2, baseY-insuffH, barW, insuffH, palette.secondary);
+
+      ctx.font='800 11px Arial';
+      ctx.textAlign='center';
+      ctx.fillStyle=darkMode ? '#e2e8f0' : '#0f172a';
+      if(s.sufficient>0) ctx.fillText(String(s.sufficient), x1+barW/2+4, Math.max(padTop+14, baseY-suffH-12));
+      if(s.insufficient>0) ctx.fillText(String(s.insufficient), x2+barW/2+4, Math.max(padTop+14, baseY-insuffH-12));
+
+      ctx.save();
+      ctx.translate(baseX+6, baseY+18);
+      ctx.rotate(-Math.PI/6);
+      ctx.fillStyle=darkMode ? '#cbd5e1' : '#334155';
+      ctx.font='700 11px Arial';
+      ctx.textAlign='right';
+      const label=s.name.length>18 ? s.name.slice(0,16)+'…' : s.name;
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    });
+
+    // Legend / note
+    const legendY=cssHeight-28;
+    ctx.textAlign='left';
+    ctx.textBaseline='middle';
+    ctx.font='700 12px Arial';
+    ctx.fillStyle=darkMode ? '#cbd5e1' : '#334155';
+    ctx.fillText('Each district uses its own color. Darker bar = Insufficient.', padLeft, legendY);
+  }
+
+  if(!animate){
+    render(1);
+    dashboardGraphState.lastKey=key;
+    return;
+  }
+
+  const duration=900;
+  const start=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-start)/duration);
+    const eased=1-Math.pow(1-t,3);
+    render(eased);
+    if(t<1){
+      dashboardGraphState.rafId=requestAnimationFrame(step);
+    } else {
+      dashboardGraphState.rafId=null;
+      dashboardGraphState.lastKey=key;
+    }
+  }
+  dashboardGraphState.rafId=requestAnimationFrame(step);
+}
+
+function refreshDashboard(){
+  populateChartFilterOptions();
+  const data=getFilteredChartRecords();
+  const totalPopulation=data.reduce((a,r)=>a+(+r.population||0),0);
+  const totalAffected=data.reduce((a,r)=>a+(+r.affected||0),0);
+  const totalSufficient=data.filter(r=>r.status==='Sufficient').length;
+  const totalInsufficient=data.filter(r=>r.status==='Insufficient').length;
+  const totalSupply=data.reduce((a,r)=>a+(+r.availableSupply||0),0);
+  animateDashboardCounter('dashRecords', data.length);
+  animateDashboardCounter('dashPopulation', totalPopulation);
+  animateDashboardCounter('dashAffected', totalAffected);
+  animateDashboardCounter('dashSufficient', totalSufficient);
+  animateDashboardCounter('dashInsufficient', totalInsufficient);
+  animateDashboardCounter('dashSupply', totalSupply, {suffix:' L'});
+  renderDistrictSummaryTable(data);
+  renderOverallStatusChart(data);
+  renderPieChart(data);
+  renderGroupedStatsChart('districtStatsChart', 'district', data);
+  renderGroupedStatsChart('barangayStatsChart', 'barangay', data);
+  drawDashboardMainGraph(data);
+}
+
+function refreshMap(){
+  const pts=records.filter(r=>r.latX && r.latY);
+  const map=document.getElementById('mapFrame');
+  if(!pts.length){ map.srcdoc='<p>No GPS data.</p>'; return; }
+  const lats=pts.map(r=>parseFloat(r.latX)), lons=pts.map(r=>parseFloat(r.latY));
+  map.src=`https://www.openstreetmap.org/export/embed.html?bbox=${Math.min(...lons)-.01}%2C${Math.min(...lats)-.01}%2C${Math.max(...lons)+.01}%2C${Math.max(...lats)+.01}&layer=mapnik`;
+}
+
+function refreshReport(){
+  const c=document.getElementById('reportContent');
+  if(!records.length){ c.innerHTML='<div class="notice warning">No records yet.</div>'; return; }
+  const filteredData=getFilteredChartRecords();
+  const reportData=filteredData.length ? filteredData : records;
+  
+  // Basic Summary Blocks
+  const totalPop = reportData.reduce((a,r)=>a+(+r.population||0),0).toLocaleString();
+  const summaryBlocks = `
+    <div class="result-grid">
+      <div class="metric"><div class="name">Total Records Extracted</div><div class="value">${reportData.length}</div></div>
+      <div class="metric"><div class="name">Total Population Recorded</div><div class="value">${totalPop}</div></div>
+    </div>
+  `;
+
+  const chartBlocks = buildReportChartsHTML(reportData);
+
+  // Brief Summary Table
+  const summaryRows = reportData.map((r,i)=>`<tr><td>${i+1}</td><td>${r.district}</td><td>${r.barangay}</td><td>${r.interviewee}</td><td><span class="${r.status==='Sufficient'?'status-good':'status-bad'}">${r.status}</span></td></tr>`).join('');
+  const summaryTable = `<div class="table-wrap"><table><thead><tr><th>#</th><th>District</th><th>Barangay</th><th>Interviewee</th><th>Status</th></tr></thead><tbody>${summaryRows}</tbody></table></div>`;
+
+  // Full Spreadsheet Section at Bottom
+  const sheetHeaders = ['#', 'District', 'Barangay', 'Zone', 'Lat X', 'Lat Y', 'Interviewee', 'Date/Time', 'Population', 'Norm Lvl', 'Curr Lvl', 'Other Water Sources', 'Sa diin gina usar ang tubig', 'Daily Need', 'Curr Supply', 'Avail Supply', 'Status', 'Affected', 'Remarks', 'Photo'];
+  const sheetRows = reportData.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${r.district}</td><td>${r.barangay}</td><td>${r.zone}</td><td>${r.latX}</td><td>${r.latY}</td>
+    <td>${r.interviewee}</td><td>${r.interviewDateTime}</td><td>${r.population}</td><td>${r.normalLevel}</td><td>${r.currentLevel}</td>
+    <td>${escapeHTML(r.otherWaterSource || '')}</td><td>${escapeHTML(r.waterUse || '')}</td>
+    <td>${r.dailyNeed} L</td><td>${r.currentSupply} L</td><td>${r.availableSupply} L</td><td>${r.status}</td><td>${r.affected}</td>
+    <td>${escapeHTML(r.remarks || '')}</td><td>${r.photoData ? `<img class="report-photo-thumb" src="${r.photoData}" alt="Photo">` : escapeHTML(r.photoName || '')}</td>
+  </tr>`).join('');
+  
+  const spreadsheetTable = `
+    <h3 class="spreadsheet-header">Spreadsheet Data</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>${sheetHeaders.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${sheetRows}</tbody>
+      </table>
+    </div>
+  `;
+
+  c.innerHTML = summaryBlocks + chartBlocks + summaryTable + spreadsheetTable;
+}
+
+function downloadBlob(blob, filename){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function exportCSV(){
+  if(!records.length) return alert('No records to export.');
+  const h=['District','Barangay','Zone','LatX','LatY','Interviewee','Date/Time','Owned by Family','Used by Family and Residents','Population','Well Depth','Normal Level','Current Level','Other Water Source','Water Use','Volume Per Well','Daily Need','Current Supply','Available Supply','Status','Affected','Remarks','Photo File Name'];
+  const rows=records.map(r=>[r.district,r.barangay,r.zone,r.latX,r.latY,r.interviewee,r.interviewDateTime,r.usedByFamily,r.usedByFamilyResidents,r.population,r.wellDepth,r.normalLevel,r.currentLevel,r.otherWaterSource,r.waterUse,r.volumePerWell,r.dailyNeed,r.currentSupply,r.availableSupply,r.status,r.affected,r.remarks,r.photoName]);
+  const csv=[h,...rows].map(row=>row.map(cell=>{
+    const value=String(cell ?? '');
+    return /[",\n]/.test(value) ? '"' + value.replace(/"/g,'""') + '"' : value;
+  }).join(',')).join('\n');
+  downloadBlob(new Blob(['\ufeff' + csv],{type:'text/csv;charset=utf-8;'}), 'shallow-well-survey.csv');
+}
+
+function excelCell(value){
+  return escapeHTML(value ?? '');
+}
+
+function exportExcel(){
+  if(!records.length) return alert('No records to export.');
+  const generatedAt=new Date().toLocaleString();
+  const totalPopulation=records.reduce((a,r)=>a+(+r.population||0),0);
+  const totalAffected=records.reduce((a,r)=>a+(+r.affected||0),0);
+  const totalSupply=records.reduce((a,r)=>a+(+r.availableSupply||0),0);
+  const headers=['#','District','Barangay','Zone','Lat X','Lat Y','Interviewee','Date/Time','Owned by Family','Used by Family and Residents','Population','Well Depth','Normal Level','Current Level','Other Water Source','Water Use','Volume Per Well','Daily Need','Current Supply','Available Supply','Status','Affected','Remarks','Photo'];
+  const rows=records.map((r,i)=>[
+    i+1,r.district,r.barangay,r.zone,r.latX,r.latY,r.interviewee,r.interviewDateTime,r.usedByFamily,r.usedByFamilyResidents,
+    r.population,r.wellDepth,r.normalLevel,r.currentLevel,r.otherWaterSource,r.waterUse,r.volumePerWell,r.dailyNeed,r.currentSupply,
+    r.availableSupply,r.status,r.affected,r.remarks,r.photoData || r.photoName || ''
+  ]);
+  const headerHtml=headers.map(h=>`<th>${excelCell(h)}</th>`).join('');
+  const rowsHtml=rows.map(row=>`<tr>${row.map((cell,idx)=>{
+    if(idx === headers.length - 1 && typeof cell === 'string' && cell.startsWith('data:image/')){
+      return `<td class="photo-cell"><img class="excel-photo" src="${cell}" alt="Photo"></td>`;
+    }
+    return `<td>${excelCell(cell)}</td>`;
+  }).join('')}</tr>`).join('');
+  const excelHtml=`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;}
+  table{border-collapse:collapse;}
+  th,td{border:1px solid #777;padding:6px;mso-number-format:"\@";vertical-align:middle;white-space:normal;}
+  th{background:#dbeafe;font-weight:bold;}
+  .photo-cell{width:115px;height:90px;text-align:center;vertical-align:middle;}
+  .excel-photo{width:95px;height:75px;object-fit:contain;display:block;margin:auto;border:1px solid #bbb;}
+  .title{font-size:18px;font-weight:bold;background:#bfdbfe;}
+  .label{font-weight:bold;background:#eef2ff;}
+</style>
+</head>
+<body>
+<table>
+  <tr><td class="title" colspan="6">Shallow Well Survey Records</td></tr>
+  <tr><td class="label">Generated At</td><td>${excelCell(generatedAt)}</td><td class="label">Total Records</td><td>${records.length}</td><td class="label">Total Population</td><td>${totalPopulation}</td></tr>
+  <tr><td class="label">Total Affected</td><td>${totalAffected}</td><td class="label">Total Available Supply</td><td>${totalSupply} L</td><td></td><td></td></tr>
+</table>
+<br>
+<table>
+  <thead><tr>${headerHtml}</tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+</body>
+</html>`;
+  const dateCode=new Date().toISOString().slice(0,10);
+  downloadBlob(new Blob(['\ufeff' + excelHtml],{type:'application/vnd.ms-excel;charset=utf-8;'}), `shallow-well-survey-${dateCode}.xls`);
+}
+
+function clearForm(){
+  ids.forEach(id=>{
+    if(id==='otherWaterSource'){ document.querySelectorAll('input[name="otherWaterSource"]').forEach(cb=>cb.checked=false); document.getElementById('otherWaterSourceText').style.display='none'; }
+    else if(document.getElementById(id)) document.getElementById(id).value='';
+  });
+  document.getElementById('photoPreview').removeAttribute('src'); document.getElementById('photoName').value=''; currentPhotoData=''; calculate();
+}
+
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.toggle('active', p.id===name));
+  if(name==='map') refreshMap();
+  if(name==='dashboard') refreshDashboard();
+  if(name==='report') refreshReport();
+}
+
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.tab)));
+document.getElementById('goReportBtn').addEventListener('click',()=>showTab('report'));
+document.getElementById('goDashboardBtn').addEventListener('click',()=>showTab('dashboard'));
+document.getElementById('themeToggleBtn').addEventListener('click',toggleTheme);
+
+document.getElementById('todayBtn').addEventListener('click',()=>document.getElementById('interviewDateTime').value=new Date().toISOString().slice(0,16));
+document.getElementById('gpsBtn').addEventListener('click',()=>navigator.geolocation.getCurrentPosition(p=>{document.getElementById('latX').value=p.coords.latitude.toFixed(6);document.getElementById('latY').value=p.coords.longitude.toFixed(6);}));
+document.getElementById('photoBtn').addEventListener('click',()=>document.getElementById('photoInput').click());
+function resizeImageFile(file, maxWidth = 900, maxHeight = 900, quality = 0.78){
+  return new Promise((resolve, reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Unable to read image.'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('Unable to load image.'));
+      img.onload=()=>{
+        let width=img.width, height=img.height;
+        const ratio=Math.min(maxWidth / width, maxHeight / height, 1);
+        width=Math.round(width * ratio); height=Math.round(height * ratio);
+        const canvas=document.createElement('canvas');
+        canvas.width=width; canvas.height=height;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('photoInput').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('photoName').value=f.name;
+  try{
+    currentPhotoData=await resizeImageFile(f);
+  }catch(err){
+    const r=new FileReader();
+    currentPhotoData=await new Promise(resolve=>{ r.onload=ev=>resolve(ev.target.result); r.readAsDataURL(f); });
+  }
+  document.getElementById('photoPreview').src=currentPhotoData;
+});
+document.getElementById('addBtn').addEventListener('click',addRecord);
+document.getElementById('clearFormBtn').addEventListener('click',clearForm);
+document.getElementById('exportCsvBtn').addEventListener('click',exportCSV);
+document.getElementById('exportCsvBtn2').addEventListener('click',exportCSV);
+document.getElementById('exportExcelBtn').addEventListener('click',exportExcel);
+document.getElementById('exportExcelBtn2').addEventListener('click',exportExcel);
+document.getElementById('printBtn').addEventListener('click',()=>window.print());
+document.getElementById('prevRecordsPage').addEventListener('click',prevRecordsPage);
+document.getElementById('nextRecordsPage').addEventListener('click',nextRecordsPage);
+document.getElementById('prevSavedSlideBtn').addEventListener('click',prevSavedSlide);
+document.getElementById('nextSavedSlideBtn').addEventListener('click',nextSavedSlide);
+document.getElementById('deleteSavedSlideBtn').addEventListener('click',deleteCurrentSavedSlide);
+let savedSliderTouchStartX = null;
+document.getElementById('savedRecordSlider').addEventListener('touchstart', e=>{ savedSliderTouchStartX = e.changedTouches[0].clientX; }, {passive:true});
+document.getElementById('savedRecordSlider').addEventListener('touchend', e=>{ if(savedSliderTouchStartX === null) return; const dx=e.changedTouches[0].clientX - savedSliderTouchStartX; if(Math.abs(dx) > 50){ dx < 0 ? nextSavedSlide() : prevSavedSlide(); } savedSliderTouchStartX = null; }, {passive:true});
+document.getElementById('chartDistrictFilter').addEventListener('change',()=>{ populateChartFilterOptions(); refreshDashboard(); refreshReport(); });
+document.getElementById('chartBarangayFilter').addEventListener('change',()=>{ refreshDashboard(); refreshReport(); });
+document.getElementById('resetChartFiltersBtn').addEventListener('click',()=>{ document.getElementById('chartDistrictFilter').value=''; populateChartFilterOptions(); document.getElementById('chartBarangayFilter').value=''; refreshDashboard(); refreshReport(); });
+document.getElementById('dashboardExportChartExcelBtn').addEventListener('click',exportChartExcel);
+document.getElementById('dashboardExportChartPdfBtn').addEventListener('click',exportChartPDF);
+document.getElementById('reportExportChartExcelBtn').addEventListener('click',exportChartExcel);
+document.getElementById('reportExportChartPdfBtn').addEventListener('click',exportChartPDF);
+
+// Updated to link directly to your specified Google Sheet URL
+document.getElementById('onlineSheetBtn').addEventListener('click', () => window.open('https://docs.google.com/spreadsheets/d/1UEigauMTGMSuP3_IC4Xt4rx2wt8Vik3sQ07FAQYsJnc/edit?gid=0#gid=0', '_blank'));
+
+document.getElementById('deleteAllBtn').addEventListener('click',()=>{if(confirm('Delete all?')){records=[];currentRecordsPage=1;currentSavedSlideIndex=0;saveRecords();}});
+document.getElementById('syncUrl').addEventListener('change',saveSettings);
+async function syncRecords(options = {}){
+  const silent = options.silent === true;
+  const url=text('syncUrl');
+  if(!url){ if(!silent) alert('No sync URL saved yet.'); updateSyncStatus(); return false; }
+  if(!records.length){ if(!silent) alert('No records to sync.'); updateSyncStatus(); return false; }
+  if(!navigator.onLine){ if(!silent) alert('You are offline. Records stay saved on this device and can be synced later.'); updateSyncStatus(); return false; }
+
+  const payload = {
+    app: 'Shallow Well Survey App',
+    syncedAt: new Date().toISOString(),
+    records
+  };
+
+  try{
+    // no-cors is used so Google Apps Script Web App accepts the request without browser CORS errors.
+    await fetch(url,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload)
+    });
+    localStorage.setItem('shallow_well_last_sync', new Date().toISOString());
+    updateSyncStatus();
+    if(!silent) alert('Sync request sent. Check your Google Sheet for updated records.');
+    return true;
+  }catch(e){
+    updateSyncStatus();
+    if(!silent) alert('Sync failed. Your records are still saved offline on this device.');
+    return false;
+  }
+}
+
+document.getElementById('syncNowBtn').addEventListener('click',()=>syncRecords());
+
+function refreshViews(){ renderTable(); renderSavedRecordSlider(); refreshDashboard(); refreshReport(); }
+
+window.addEventListener('online', updateConnectionStatus);
+window.addEventListener('offline', updateConnectionStatus);
+window.addEventListener('resize', () => { const data=getFilteredChartRecords(); drawDashboardMainGraph(data, {animate:false}); drawBarangayStatsCanvas(data); });
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredPrompt = event;
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  }else{
+    alert('To install: open this app in Chrome/Edge, then use Add to Home Screen or Install App from the browser menu.');
+  }
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+calculate(); loadSettings(); loadRecords(); updateConnectionStatus();
+</script>
+</body>
+</html>
